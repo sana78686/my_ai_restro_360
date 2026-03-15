@@ -1,0 +1,24 @@
+<?php
+
+namespace App\Console;
+
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Console\Commands\NormalizeMediaPaths;
+
+class Kernel extends ConsoleKernel
+{
+    protected $commands = [
+        NormalizeMediaPaths::class,
+    ];
+
+    protected function schedule(Schedule $schedule): void
+    {
+        // $schedule->command('inspire')->hourly();
+    }
+
+    protected function commands(): void
+    {
+        $this->load(__DIR__ . '/Commands');
+    }
+}

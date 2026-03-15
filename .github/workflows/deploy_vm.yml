@@ -1,0 +1,49 @@
+name: Manual Deploy to RestroManage
+
+on:
+  workflow_dispatch:  # allows manual trigger from GitHub UI
+
+jobs:
+  deploy:
+    name: Deploy to RestroManage VM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧰 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔑 Set up SSH key
+        run: |
+          echo "${{ secrets.RESTROMANAGE_SERVER_SSHKEY }}" > private_key
+          chmod 600 private_key
+
+      - name: 🚀 Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.RESTROMANAGE_SERVER_HOST }}
+          username: ${{ secrets.RESTROMANAGE_SERVER_USER }}
+          key: ${{ secrets.RESTROMANAGE_SERVER_SSHKEY }}
+          port: 22
+          script: |
+            echo "Starting deployment on RestroManage VM..."
+
+            # Run as www-data for Laravel operations
+            sudo -u www-data /bin/bash -c '
+              export HOME=/var/www/vhosts/apimstec.com
+              export GIT_SSH_COMMAND="ssh -i /var/www/vhosts/apimstec.com/.ssh/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+              cd /var/www/vhosts/apimstec.com/httpdocs || exit 1
+
+              echo "Pulling latest changes..."
+              git pull origin main
+
+              echo "Installing composer dependencies..."
+              composer install --no-dev --optimize-autoloader
+
+              echo "Caching Laravel configs..."
+              php artisan optimize:clear
+              php artisan config:clear
+              php artisan route:clear
+              php artisan view:clear
+            '
+            echo "✅ Deployment complete!"
