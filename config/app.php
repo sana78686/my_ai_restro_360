@@ -54,7 +54,7 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'https://my.airestro360.com/public'),
+    'url' => env('APP_URL', 'https://my.airestro360.com'),
 
     /*
     |--------------------------------------------------------------------------
