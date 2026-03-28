@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\Tenant;
 
 use Carbon\Carbon;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Setting;
 use App\Mail\VerifyOtpMail;
@@ -20,6 +21,42 @@ use Illuminate\Support\Facades\Mail;
 
 class AuthController extends Controller
 {
+    private function syncAccountVerificationTokenToCentralTenant(string $otp, Carbon $expires): void
+    {
+        $current = tenant();
+        if (! $current) {
+            return;
+        }
+
+        Tenant::query()->whereKey($current->id)->update([
+            'account_verification_token' => $otp,
+            'account_verification_token_expires_at' => $expires,
+        ]);
+    }
+
+    private function clearAccountVerificationTokenOnCentralTenant(): void
+    {
+        $current = tenant();
+        if (! $current) {
+            return;
+        }
+
+        Tenant::query()->whereKey($current->id)->update([
+            'account_verification_token' => null,
+            'account_verification_token_expires_at' => null,
+        ]);
+    }
+
+    /** @return array<string, string> */
+    private function verificationOtpConsolePayload(string $otp): array
+    {
+        if (! app()->environment('local') && ! config('app.show_otp_in_console')) {
+            return [];
+        }
+
+        return ['debug_tenant_verification_token' => $otp];
+    }
+
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
@@ -41,9 +78,12 @@ class AuthController extends Controller
         // If email not verified, generate/send OTP and require verification
         if (! $user->email_verified_at) {
             $otp = (string) random_int(100000, 999999);
+            $expires = Carbon::now()->addMinutes(10);
             $user->otp = $otp;
-            $user->otp_expires_at = Carbon::now()->addMinutes(10);
+            $user->otp_expires_at = $expires;
             $user->save();
+
+            $this->syncAccountVerificationTokenToCentralTenant($otp, $expires);
 
             try {
                 Mail::to($user->email)->send(new VerifyOtpMail($otp));
@@ -54,7 +94,7 @@ class AuthController extends Controller
             return response()->json(array_merge([
                 'status' => 'verify_required',
                 'message' => 'Email verification required. OTP sent to your email.',
-            ], MailDebug::otpPayload($otp, $user->email)), 200);
+            ], MailDebug::otpPayload($otp, $user->email), $this->verificationOtpConsolePayload($otp)), 200);
         }
 
         // Already verified → issue token
@@ -120,6 +160,8 @@ class AuthController extends Controller
         $user->otp_expires_at = null;
         $user->save();
 
+        $this->clearAccountVerificationTokenOnCentralTenant();
+
         $notification = Notification::create([
             'type' => 'welcome',
             'title' => 'Welcome to Our Platform!',
@@ -172,9 +214,12 @@ class AuthController extends Controller
         // If email not verified, generate/send OTP and require verification
         if (!$user->email_verified_at) {
             $otp = (string) random_int(100000, 999999);
+            $expires = Carbon::now()->addMinutes(10);
             $user->otp = $otp;
-            $user->otp_expires_at = Carbon::now()->addMinutes(10);
+            $user->otp_expires_at = $expires;
             $user->save();
+
+            $this->syncAccountVerificationTokenToCentralTenant($otp, $expires);
 
             try {
                 Mail::to($user->email)->send(new VerifyOtpMail($otp));
@@ -189,7 +234,7 @@ class AuthController extends Controller
             return response()->json(array_merge([
                 'success' => true,
                 'message' => 'OTP sent successfully to your email.',
-            ], MailDebug::otpPayload($otp, $user->email)), 200);
+            ], MailDebug::otpPayload($otp, $user->email), $this->verificationOtpConsolePayload($otp)), 200);
         }
 
         return response()->json([
@@ -228,10 +273,16 @@ class AuthController extends Controller
             ], 422);
         }
 
+        $tenantRow = tenant() ? Tenant::query()->whereKey(tenant()->id)->first() : null;
+
         return response()->json([
             'success' => true,
             'debug_table_otp' => (string) $user->otp,
             'otp_expires_at' => $user->otp_expires_at,
+            'debug_tenant_verification_token' => $tenantRow?->account_verification_token
+                ? (string) $tenantRow->account_verification_token
+                : null,
+            'debug_tenant_verification_expires_at' => $tenantRow?->account_verification_token_expires_at,
         ]);
     }
 

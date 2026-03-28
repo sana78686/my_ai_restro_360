@@ -43,7 +43,8 @@ class Tenant extends BaseTenant implements TenantWithDatabase, HasMedia
         'trial_started_at' => 'datetime',
         'trial_ends_at' => 'datetime',
         'latitude' => 'float',
-        'longitude' => 'float'
+        'longitude' => 'float',
+        'account_verification_token_expires_at' => 'datetime',
     ];
 
     public static function getCustomColumns(): array
@@ -69,7 +70,9 @@ class Tenant extends BaseTenant implements TenantWithDatabase, HasMedia
             'status',
             'database_name',
             'stripe_customer_id', 'stripe_subscription_id', 'subscription_status',
-        'subscription_ends_at',
+            'subscription_ends_at',
+            'account_verification_token',
+            'account_verification_token_expires_at',
         ];
     }
     public function getDatabaseName(): string

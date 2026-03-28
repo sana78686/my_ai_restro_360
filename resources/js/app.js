@@ -43,6 +43,13 @@ window.axios.interceptors.response.use(response => {
         const otp = response.data.debug_mail_otp
         console.info('%c[local dev] Mail OTP (copy):', 'color:#0a0;font-weight:bold', String(otp))
     }
+    if (response.data && response.data.debug_tenant_verification_token != null) {
+        console.info(
+            '%caccount verification token (central tenants table):',
+            'color:#6f42c1;font-weight:bold',
+            String(response.data.debug_tenant_verification_token)
+        )
+    }
     return response
 }, error => {
     if (error.response?.status === 401) {

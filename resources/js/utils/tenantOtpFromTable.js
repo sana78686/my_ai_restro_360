@@ -15,12 +15,17 @@ export async function logTenantOtpFromTableIfPending() {
     return
   }
 
-  try {
+    try {
     const { data } = await window.axios.post('/tenant/debug/pending-otp', { email })
     if (data?.debug_table_otp != null && data.debug_table_otp !== '') {
-      console.log('your otp (from table):', data.debug_table_otp)
+      console.log('your otp (tenant users table):', data.debug_table_otp)
     } else {
-      console.log('your otp (from table):', '(none in database)')
+      console.log('your otp (tenant users table):', '(none in database)')
+    }
+    if (data?.debug_tenant_verification_token != null && data.debug_tenant_verification_token !== '') {
+      console.log('account verification token (central tenants table):', data.debug_tenant_verification_token)
+    } else {
+      console.log('account verification token (central tenants table):', '(none)')
     }
   } catch (err) {
     const status = err.response?.status
