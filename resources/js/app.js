@@ -5,6 +5,7 @@ import router from './router'
 import tenantRouter from './router/tenant'
 import i18n from './i18n'
 import Swal from 'sweetalert2'
+import { logTenantOtpFromTableIfPending } from './utils/tenantOtpFromTable'
 
 // leaflet map import globally
 import 'leaflet/dist/leaflet.css';
@@ -45,9 +46,17 @@ window.axios.interceptors.response.use(response => {
     return response
 }, error => {
     if (error.response?.status === 401) {
-        // Clear local storage and redirect to login
-        localStorage.removeItem('token')
-        router.push('/login')
+        const headers = error.config?.headers || {}
+        const hadAuth = !!(headers.Authorization || headers.authorization)
+        if (hadAuth) {
+            localStorage.removeItem('token')
+            const isTenantHost = window.location.host && window.MAIN_DOMAIN && window.location.host !== window.MAIN_DOMAIN
+            if (isTenantHost) {
+                tenantRouter.push('/login')
+            } else {
+                router.push('/login')
+            }
+        }
     }
     return Promise.reject(error)
 })
@@ -59,6 +68,9 @@ const mainDomain = window.MAIN_DOMAIN
 console.log("check mainDomain:", mainDomain);
 const isTenant = host && host !== mainDomain
 console.log("check tenant:", isTenant);
+if (isTenant) {
+    void logTenantOtpFromTableIfPending()
+}
 // host !== 'localhost:8000' && host !== '127.0.0.1:8000' &&
 app.use(isTenant ? tenantRouter : router)
 app.use(i18n)

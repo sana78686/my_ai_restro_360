@@ -68,6 +68,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import Swal from 'sweetalert2'
+import { logTenantOtpFromTableIfPending } from '@/utils/tenantOtpFromTable'
 
 const { t } = useI18n()
 const otp = ref('')
@@ -90,14 +91,7 @@ onMounted(async () => {
     console.info('%c[verify-otp] Stored auth token (copy):', 'color:#0366d6;font-weight:bold', existing)
   }
 
-  try {
-    const { data } = await window.axios.post('/tenant/debug/pending-otp', { email })
-    if (data?.debug_table_otp) {
-      console.info('%c[verify-otp] OTP from users table (copy):', 'color:#22863a;font-weight:bold', data.debug_table_otp)
-    }
-  } catch {
-    // Route exists only when APP_ENV=local; ignore 404 / errors on production
-  }
+  void logTenantOtpFromTableIfPending()
 })
 
 async function handleVerifyOtp() {

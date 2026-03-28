@@ -203,7 +203,7 @@ class AuthController extends Controller
      */
     public function debugPendingOtp(Request $request)
     {
-        if (! app()->environment('local')) {
+        if (! app()->environment('local') && ! config('app.show_otp_in_console')) {
             abort(404);
         }
 

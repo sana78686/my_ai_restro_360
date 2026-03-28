@@ -61,8 +61,8 @@
 <script setup>
 import { ref , onMounted} from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
 import Swal from 'sweetalert2'
+import { logTenantOtpFromTableIfPending } from '@/utils/tenantOtpFromTable'
 
 const username = ref('')
 const password = ref('')
@@ -76,7 +76,7 @@ async function handleLogin() {
   error.value = ''
   loading.value = true
   try {
-    const response = await axios.post('/tenant/login', {
+    const response = await window.axios.post('/tenant/login', {
       email: username.value,
       password: password.value,
     })
@@ -85,6 +85,7 @@ async function handleLogin() {
     if (response.data.status === 'verify_required') {
       // Save temporary user/email so Verify page knows who is verifying
       localStorage.setItem('pending_verification_email', username.value)
+      void logTenantOtpFromTableIfPending()
 
       await Swal.fire({
         icon: 'info',
@@ -100,11 +101,11 @@ async function handleLogin() {
     // CASE 2: Login success → store token
     const token = response.data.token
     localStorage.setItem('token', token)
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    window.axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
   navigator.geolocation.getCurrentPosition(async (pos) => {
   const token = localStorage.getItem('token')
-  await axios.post('/tenant/update-location', {
+  await window.axios.post('/tenant/update-location', {
     latitude: pos.coords.latitude,
     longitude: pos.coords.longitude,
   }, {

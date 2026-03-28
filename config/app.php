@@ -45,6 +45,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tenant OTP debug endpoint & browser console
+    |--------------------------------------------------------------------------
+    |
+    | When true, POST /api/tenant/debug/pending-otp exposes the OTP stored on the
+    | tenant user row (used to print "your otp (from table)" next to tenant checks).
+    | Set SHOW_OTP_IN_CONSOLE=false when you do not want this (recommended for public
+    | production); defaults to true so local and typical dev/stage behave as requested.
+    |
+    */
+
+    'show_otp_in_console' => filter_var(env('SHOW_OTP_IN_CONSOLE', true), FILTER_VALIDATE_BOOLEAN),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |
