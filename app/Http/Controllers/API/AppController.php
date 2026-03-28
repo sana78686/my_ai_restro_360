@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Helpers\AppNameHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AppController extends Controller
 {
@@ -15,21 +16,22 @@ class AppController extends Controller
     {
         try {
             $appName = AppNameHelper::getAppName();
-            
+
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'app_name' => $appName
-                ]
+                    'app_name' => $appName,
+                ],
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::warning('getAppName failed: '.$e->getMessage());
+
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch app name',
+                'success' => true,
                 'data' => [
-                    'app_name' => config('app.name', 'Laravel')
-                ]
-            ], 500);
+                    'app_name' => config('app.name', 'Laravel'),
+                ],
+            ]);
         }
     }
 }

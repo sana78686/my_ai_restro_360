@@ -64,7 +64,6 @@
 <script>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
 import Swal from 'sweetalert2'
 
 export default {
@@ -83,8 +82,9 @@ export default {
       errors.value = {}
 
       try {
-        const response = await axios.post('/login', form)
-        
+        const http = window.axios
+        const response = await http.post('/login', form)
+
         if (response.data.success) {
           // Store the token and user data
           localStorage.setItem('token', response.data.token)
@@ -92,9 +92,9 @@ export default {
             ...response.data.user,
             roles: response.data.user.roles
           }))
-          
+
           // Set axios default authorization header
-          axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
+          http.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
           
           // Show success message
           await Swal.fire({

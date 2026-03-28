@@ -37,15 +37,17 @@ class AppNameHelper
                 }
             }
 
-            // Method 3: Check by hostname as fallback
+            // Method 3: Central vs tenant host (do not use app.name — it is not the hostname)
             if (!$isTenantContext) {
-                $mainDomain = config('app.name', 'AiRestro360');
-                $currentHost = request()->getHost();
-                $currentPort = request()->getPort();
-                if ($currentPort && $currentPort != 80 && $currentPort != 443) {
-                    $currentHost .= ':' . $currentPort;
-                }
-                $isTenantContext = $currentHost && $currentHost !== $mainDomain;
+                $centralDomains = config('tenancy.central_domains', []);
+                $host = request()->getHost();
+                $port = (int) request()->getPort();
+                $hostWithPort = ($port && ! in_array($port, [80, 443], true))
+                    ? "{$host}:{$port}"
+                    : $host;
+                $isCentral = in_array($host, $centralDomains, true)
+                    || in_array($hostWithPort, $centralDomains, true);
+                $isTenantContext = ! $isCentral;
             }
 
             if ($isTenantContext) {
@@ -60,8 +62,7 @@ class AppNameHelper
                     \Log::warning('Failed to get tenant business name: ' . $e->getMessage());
                 }
             }
-        } catch (\Exception $e) {
-            // If anything fails, return default
+        } catch (\Throwable $e) {
             \Log::warning('Failed to determine app name: ' . $e->getMessage());
         }
 

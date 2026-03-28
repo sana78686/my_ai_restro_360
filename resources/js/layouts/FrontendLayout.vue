@@ -192,7 +192,6 @@
 <script setup>
 import { ref, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import axios from "axios";
 import { Modal } from 'bootstrap';
 import Swal from 'sweetalert2';
 import LanguageSwitcher from "../components/frontend/LanguageSwitcher.vue";
@@ -206,6 +205,9 @@ let restaurantLoginModal = null;
 
 // Get the current route
 const route = useRoute();
+
+// Reserved for hiding the fixed navbar during navigation (e.g. future loading UX)
+const isNavigating = ref(false);
 
 // Initialize modal when component mounts
 onMounted(() => {
@@ -244,7 +246,7 @@ const handleRestaurantLogin = async () => {
 
   try {
     // API call to find tenant by email
-    const response = await axios.post('/tenant/find-by-email', {
+    const response = await window.axios.post('/tenant/find-by-email', {
       email: restaurantEmail.value
     });
 

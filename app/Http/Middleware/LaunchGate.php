@@ -15,6 +15,12 @@ class LaunchGate
     protected array $except = [
         'launch-gate',
         'launch-gate/unlock',
+        // Public API used for marketing site / tenant signup before session unlock
+        'api/app-name',
+        'api/plans',
+        'api/tenants/register',
+        'api/tenant/find-by-email',
+        'api/check-subdomain',
     ];
 
     public function handle(Request $request, Closure $next): Response

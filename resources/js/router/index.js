@@ -64,6 +64,12 @@ const routes = [
         meta: { title: 'Register' },
       },
       {
+        path: 'login',
+        name: 'login',
+        component: () => import('../views/auth/Login.vue'),
+        meta: { title: 'Login' },
+      },
+      {
         path: 'auth/sys-access-9xA7',
         name: 'super-login',
         component: () => import('../views/auth/Login.vue'),

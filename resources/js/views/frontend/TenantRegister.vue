@@ -337,7 +337,6 @@ from 'vue'
 // import { useI18n } from 'vue-i18n'
 // const { $t} = useI18n()
 import { useRouter } from 'vue-router'
-import axios from 'axios'
 import Swal from 'sweetalert2'
 import { Tooltip } from 'bootstrap'
 import { VueTelInput } from 'vue-tel-input'
@@ -455,20 +454,21 @@ export default {
     const locationError = ref(null)
     const countryDetecting = ref(false)
 
-    // Watch for phone number changes to update public_phone
-    watch([() => form.value.phoneNumber, selectedCountry], () => {
-      updatePublicPhone()
-    }, { immediate: true })
-
-    // Update public_phone with country code and formatted number
+    // Update public_phone with country code and formatted number (must be defined before watch — const is not hoisted)
     const updatePublicPhone = () => {
-      const cleanedNumber = form.value.phoneNumber.replace(/\D/g, '')
-      if (cleanedNumber) {
-        form.value.public_phone = selectedCountry.value.dialCode + cleanedNumber
+      const dial = selectedCountry.value?.dialCode ?? ''
+      const cleanedNumber = (form.value.phoneNumber || '').replace(/\D/g, '')
+      if (cleanedNumber && dial) {
+        form.value.public_phone = dial + cleanedNumber
       } else {
         form.value.public_phone = ''
       }
     }
+
+    // Watch for phone number changes to update public_phone
+    watch([() => form.value.phoneNumber, selectedCountry], () => {
+      updatePublicPhone()
+    }, { immediate: true })
 
     // Initialize tooltips
     const initTooltips = () => {
@@ -751,7 +751,7 @@ export default {
 
       if (selectedPlanId && registrationSource === 'pricing-plan-selected') {
         // Fetch plan details to get interval
-        axios.get(`/plans`).then(response => {
+        window.axios.get('/plans').then(response => {
           const plans = response.data.plans || response.data.data || []
           const plan = plans.find(p => p.id == selectedPlanId)
           if (plan) {
@@ -859,7 +859,7 @@ export default {
 
         console.log('Submitting data:', submitData);
 
-        const response = await axios.post('/tenants/register', submitData);
+        const response = await window.axios.post('/tenants/register', submitData);
 
         if (response.data.success) {
           // Clear sessionStorage after successful registration

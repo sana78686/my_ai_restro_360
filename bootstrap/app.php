@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\LaunchGate::class,
         ]);
         $middleware->api(prepend: [
-            \App\Http\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
             \App\Http\Middleware\LaunchGate::class,
