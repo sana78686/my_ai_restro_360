@@ -13,6 +13,7 @@ use App\Mail\PasswordResetOtp;
 use App\Helpers\LocationHelper;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Support\MailDebug;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -50,10 +51,10 @@ class AuthController extends Controller
                 Log::error('Failed sending OTP email: ' . $e->getMessage());
             }
 
-            return response()->json([
+            return response()->json(array_merge([
                 'status' => 'verify_required',
                 'message' => 'Email verification required. OTP sent to your email.',
-            ], 200);
+            ], MailDebug::otpPayload($otp, $user->email)), 200);
         }
 
         // Already verified → issue token
@@ -185,10 +186,10 @@ class AuthController extends Controller
                 ], 500);
             }
 
-            return response()->json([
+            return response()->json(array_merge([
                 'success' => true,
                 'message' => 'OTP sent successfully to your email.',
-            ], 200);
+            ], MailDebug::otpPayload($otp, $user->email)), 200);
         }
 
         return response()->json([
@@ -233,11 +234,11 @@ class AuthController extends Controller
         // 5. Send OTP via email
         Mail::to($user->email)->send(new PasswordResetOtp($otp));
 
-        return response()->json([
+        return response()->json(array_merge([
             'success' => true,
             'message' => 'OTP sent successfully',
             'email' => $user->email,
-        ]);
+        ], MailDebug::otpPayload((string) $otp, $user->email)));
     }
 
     // Reset Password

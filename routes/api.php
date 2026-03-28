@@ -150,6 +150,8 @@ Route::middleware([
     Route::get('/settings', [App\Http\Controllers\API\Tenant\SettingController::class, 'index']);
     Route::get('/email-setting', [App\Http\Controllers\API\Tenant\SettingController::class, 'email_index']);
     Route::get('/app-name', [AppController::class, 'getAppName']);
+    // Public CMS list for storefront header/footer (dashboard uses auth cms_menu resource)
+    Route::get('/public/cms_menu', [CmsMenuController::class, 'index']);
     Route::post('/verify-otp', [TenantAuthController::class, 'verifyOtp']);
     Route::post('/resend-otp', [TenantAuthController::class, 'resendOtp']);
     Route::post('/send-otp', [TenantAuthController::class, 'sendOtp']);

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\Mail\PasswordResetOtp;
 use App\Mail\TenantWelcomeEmail;
 use App\Http\Controllers\Controller;
+use App\Support\MailDebug;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -180,11 +181,11 @@ class AuthController extends Controller
                 ], 500);
             }
 
-            return response()->json([
+            return response()->json(array_merge([
                 'success' => false,
                 'status' => 'verify_required',
-                'message' => 'OTP sent to your email. Please verify.'
-            ], 403);
+                'message' => 'OTP sent to your email. Please verify.',
+            ], MailDebug::otpPayload((string) $otp, $user->email)), 403);
         }
 
         // 🔹 If already verified → issue token

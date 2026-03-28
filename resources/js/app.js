@@ -38,6 +38,10 @@ window.axios.interceptors.request.use(config => {
 
 // Add response interceptor
 window.axios.interceptors.response.use(response => {
+    if (import.meta.env.DEV && response.data && response.data.debug_mail_otp != null) {
+        const otp = response.data.debug_mail_otp
+        console.info('%c[local dev] Mail OTP (copy):', 'color:#0a0;font-weight:bold', String(otp))
+    }
     return response
 }, error => {
     if (error.response?.status === 401) {

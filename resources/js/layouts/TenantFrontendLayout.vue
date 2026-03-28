@@ -50,7 +50,7 @@
             <header class="header">
                 <nav class="navbar navbar-expand-lg navbar-light flex-nowrap bg-white fixed-top mt-0 mt-md-4"
 
-                    :class="{ 'fixed-top': $isMobile }">
+                    :class="{ 'fixed-top': isMobile }">
                     <div class="container d-flex align-items-center justify-content-between mt-0 mt-md-3">
                         <!-- Hamburger for mobile only -->
                         <button
@@ -357,10 +357,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, provide, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, provide, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import LanguageSwitcher from '../components/frontend/LanguageSwitcher.vue'
-import axios from 'axios'
 import defaultLogo from '@/assets/logo/airestro360-logo-dark.png'
 import Swal from 'sweetalert2'
 import { Tooltip } from 'bootstrap'
@@ -411,13 +410,21 @@ const redirectToLogin = () => {
 
 const showDiscountBanner = ref(true)
 
+const isMobile = ref(false)
+const mobileMedia = typeof window !== 'undefined' ? window.matchMedia('(max-width: 991.98px)') : null
+const syncIsMobile = () => {
+    if (mobileMedia) {
+        isMobile.value = mobileMedia.matches
+    }
+}
+
 function dismissDiscountBanner() {
     showDiscountBanner.value = false
 }
 
 const fetchSettings = async () => {
     try {
-        const response = await axios.get('/tenant/settings')
+        const response = await window.axios.get('/tenant/settings')
         if (response.data.success && response.data.data) {
             settings.value = response.data.data
             console.log('Global Settings:', settings.value)
@@ -435,7 +442,7 @@ const fetchSettings = async () => {
 
 const fetchCmsPages = async () => {
     try {
-        const response = await axios.get('/tenant/cms_menu', {
+        const response = await window.axios.get('/tenant/public/cms_menu', {
             params: {
                 status: 'active',
                 per_page: 1000
@@ -454,7 +461,7 @@ const handleNewsletterSubmit = async () => {
     if (!newsletterEmail.value) return
     newsletterLoading.value = true
     try {
-        const response = await axios.post('/tenant/subscribe', { email: newsletterEmail.value })
+        const response = await window.axios.post('/tenant/subscribe', { email: newsletterEmail.value })
         if (response.data.success) {
             Swal.fire({
                 icon: 'success',
@@ -481,6 +488,11 @@ const handleNewsletterSubmit = async () => {
 }
 
 onMounted(() => {
+    syncIsMobile()
+    if (mobileMedia) {
+        mobileMedia.addEventListener('change', syncIsMobile)
+    }
+
     fetchSettings()
     fetchCmsPages()
 
@@ -498,6 +510,12 @@ onMounted(() => {
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
         new Tooltip(el)
     })
+})
+
+onUnmounted(() => {
+    if (mobileMedia) {
+        mobileMedia.removeEventListener('change', syncIsMobile)
+    }
 })
 </script>
 

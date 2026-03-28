@@ -29,6 +29,11 @@ class LaunchGate
             return $next($request);
         }
 
+        // Storefront / tenant domains: do not require launch password (customers have no gate access)
+        if (! $this->isCentralHost($request)) {
+            return $next($request);
+        }
+
         if ($this->isExcept($request)) {
             return $next($request);
         }
@@ -61,5 +66,21 @@ class LaunchGate
     protected function isUnlocked(Request $request): bool
     {
         return $request->session()->get('launch_gate_unlocked', false) === true;
+    }
+
+    /**
+     * Hosts that serve the central (marketing / super-admin) app only.
+     */
+    protected function isCentralHost(Request $request): bool
+    {
+        $centralDomains = config('tenancy.central_domains', []);
+        $host = $request->getHost();
+        $port = (int) $request->getPort();
+        $hostWithPort = ($port && ! in_array($port, [80, 443], true))
+            ? "{$host}:{$port}"
+            : $host;
+
+        return in_array($host, $centralDomains, true)
+            || in_array($hostWithPort, $centralDomains, true);
     }
 }
