@@ -101,8 +101,7 @@ const routes = [
       {
         path: '/verify-otp',
         name: 'verify-otp',
-        component: () => import('../views/tenant/VerifyOtp.vue'),
-        meta: { title: 'Verify OTP' }
+        redirect: (to) => ({ path: '/login', query: { ...to.query, verify: '1' } })
       },
 
     ]
@@ -119,7 +118,7 @@ const routes = [
         path: '',
         name: 'tenant-dashboard',
         component: () => import('../views/tenant_dashboard/TenantDashboard.vue'),
-        meta: { title: 'Home' }
+        meta: { title: 'Dashboard' }
       },
       {
         path: '/dashboard/roles',
@@ -136,21 +135,134 @@ const routes = [
       {
         path: '/dashboard/categories',
         name: 'tenant-categories',
-        meta: { requiresAuth: true },
-        component: () => import('../views/tenant_dashboard/Categories.vue'),
-        meta: { title: 'Users' }
+        meta: { requiresAuth: true, title: 'Categories' },
+        component: () => import('../views/tenant_dashboard/Categories.vue')
       },
       {
         path: '/dashboard/products',
         name: 'tenant-products',
-        meta: { title: 'Users' },
+        meta: { title: 'Products' },
         component: () => import('../views/tenant_dashboard/Products.vue')
       },
       {
         path: '/dashboard/settings',
-        name: 'tenant-settings',
-       meta: { title: 'Users' },
-        component: () => import('../views/tenant_dashboard/Settings.vue')
+        component: () => import('../views/tenant_dashboard/business-settings/BusinessSettingsShell.vue'),
+        meta: { title: 'Business Settings', eatDeskHeader: true, eatDeskTitle: 'Business Settings' },
+        children: [
+          {
+            path: '',
+            name: 'tenant-settings',
+            redirect: { name: 'tenant-settings-general' }
+          },
+          {
+            path: 'general',
+            name: 'tenant-settings-general',
+            meta: { title: 'General', eatDeskHeader: true, eatDeskTitle: 'Business Settings' },
+            component: () => import('../views/tenant_dashboard/business-settings/BsGeneral.vue')
+          },
+          {
+            path: 'branches',
+            name: 'tenant-settings-branches',
+            meta: { title: 'Branches', eatDeskHeader: true, eatDeskTitle: 'Business Settings' },
+            component: () => import('../views/tenant_dashboard/business-settings/BsBranches.vue')
+          },
+          {
+            path: 'bill',
+            name: 'tenant-settings-bill',
+            meta: { title: 'Bill Settings', eatDeskHeader: true, eatDeskTitle: 'Business Settings' },
+            component: () => import('../views/tenant_dashboard/business-settings/BsBill.vue')
+          },
+          {
+            path: 'discounts',
+            name: 'tenant-settings-discounts',
+            meta: { title: 'Discounts', eatDeskHeader: true, eatDeskTitle: 'Business Settings' },
+            component: () => import('../views/tenant_dashboard/business-settings/BsDiscounts.vue')
+          },
+          {
+            path: 'payments',
+            name: 'tenant-settings-payments',
+            meta: { title: 'Payment Accounts', eatDeskHeader: true, eatDeskTitle: 'Business Settings' },
+            component: () => import('../views/tenant_dashboard/business-settings/BsPayments.vue')
+          }
+        ]
+      },
+      {
+        path: '/dashboard/website-settings',
+        component: () => import('../views/tenant_dashboard/website-settings/WebsiteSettingsShell.vue'),
+        meta: { title: 'Website Settings', eatDeskHeader: true, eatDeskTitle: 'Website Settings' },
+        children: [
+          {
+            path: '',
+            name: 'tenant-website-settings',
+            redirect: { name: 'tenant-website-template' }
+          },
+          {
+            path: 'template',
+            name: 'tenant-website-template',
+            meta: { title: 'Template', eatDeskHeader: true, eatDeskTitle: 'Website Settings', websiteTab: 'template' },
+            component: () => import('../views/tenant_dashboard/website-settings/WebsiteSettingsContent.vue')
+          },
+          {
+            path: 'branding',
+            name: 'tenant-website-branding',
+            meta: { title: 'Branding', eatDeskHeader: true, eatDeskTitle: 'Website Settings', websiteTab: 'branding' },
+            component: () => import('../views/tenant_dashboard/website-settings/WebsiteSettingsContent.vue')
+          },
+          {
+            path: 'seo',
+            name: 'tenant-website-seo',
+            meta: { title: 'SEO', eatDeskHeader: true, eatDeskTitle: 'Website Settings', websiteTab: 'seo' },
+            component: () => import('../views/tenant_dashboard/website-settings/WebsiteSettingsContent.vue')
+          },
+          {
+            path: 'domain',
+            name: 'tenant-website-domain',
+            meta: { title: 'Domain', eatDeskHeader: true, eatDeskTitle: 'Website Settings', websiteTab: 'domain' },
+            component: () => import('../views/tenant_dashboard/website-settings/WebsiteSettingsContent.vue')
+          },
+          {
+            path: 'contact',
+            name: 'tenant-website-contact',
+            meta: { title: 'Contact', eatDeskHeader: true, eatDeskTitle: 'Website Settings', websiteTab: 'contact' },
+            component: () => import('../views/tenant_dashboard/website-settings/WebsiteSettingsContent.vue')
+          },
+          {
+            path: 'hero',
+            name: 'tenant-website-hero',
+            meta: { title: 'Hero', eatDeskHeader: true, eatDeskTitle: 'Website Settings', websiteTab: 'hero' },
+            component: () => import('../views/tenant_dashboard/website-settings/WebsiteSettingsContent.vue')
+          },
+          {
+            path: 'theme',
+            name: 'tenant-website-theme',
+            meta: { title: 'Theme', eatDeskHeader: true, eatDeskTitle: 'Website Settings', websiteTab: 'theme' },
+            component: () => import('../views/tenant_dashboard/website-settings/WebsiteSettingsContent.vue')
+          },
+          {
+            path: 'social',
+            name: 'tenant-website-social',
+            meta: { title: 'Social', eatDeskHeader: true, eatDeskTitle: 'Website Settings', websiteTab: 'social' },
+            component: () => import('../views/tenant_dashboard/website-settings/WebsiteSettingsContent.vue')
+          },
+          {
+            path: 'hours',
+            name: 'tenant-website-hours',
+            meta: { title: 'Hours', eatDeskHeader: true, eatDeskTitle: 'Website Settings', websiteTab: 'hours' },
+            component: () => import('../views/tenant_dashboard/website-settings/WebsiteSettingsContent.vue')
+          },
+          {
+            path: 'sections',
+            name: 'tenant-website-sections',
+            meta: { title: 'Sections', eatDeskHeader: true, eatDeskTitle: 'Website Settings', websiteTab: 'sections' },
+            component: () => import('../views/tenant_dashboard/website-settings/WebsiteSettingsContent.vue')
+          },
+          {
+            path: 'preferences',
+            name: 'tenant-website-preferences',
+            meta: { title: 'Website preferences', eatDeskHeader: true, eatDeskTitle: 'Website Settings', websiteTab: 'preferences' },
+            component: () => import('../views/tenant_dashboard/website-settings/WebsiteSettingsContent.vue')
+          }
+        ]
       },
       {
         path: '/dashboard/cms',

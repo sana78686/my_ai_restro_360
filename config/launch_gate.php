@@ -10,7 +10,7 @@ return [
     | Set to false when you're ready to go live — no code changes needed.
     |
     */
-    'enabled' => env('LAUNCH_GATE_ENABLED', true),
+    'enabled' => env('LAUNCH_GATE_ENABLED', false),
 
     /*
     |--------------------------------------------------------------------------

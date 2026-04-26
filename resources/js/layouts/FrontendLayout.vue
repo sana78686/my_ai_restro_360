@@ -1,7 +1,7 @@
 <template>
-  <div class="frontend-layout">
-    <!-- Top Bar -->
-    <div class="top-bar bg-dark text-light pt-4 pb-2">
+  <div class="frontend-layout" :class="{ 'frontend-layout--home': isHome || isMinimalAuth, 'frontend-layout--minimal-auth': isMinimalAuth }">
+    <!-- Top Bar (hidden on home landing and super-admin login) -->
+    <div v-if="!isHome && !isMinimalAuth" class="top-bar bg-dark text-light pt-4 pb-2">
       <div class="container">
         <div class="row align-items-center">
           <div class="col-md-8">
@@ -24,8 +24,8 @@
       </div>
     </div>
 
-    <!-- Header -->
-    <div style="position: relative; z-index: 1050; top: 40px;">
+    <!-- Header: full nav (non-home, non-minimal-auth) -->
+    <div v-if="!isHome && !isMinimalAuth" style="position: relative; z-index: 1050; top: 40px;">
       <header class="header">
        <!-- close auto when visit any page from navbar  -->
        <div v-if="!isNavigating">
@@ -68,8 +68,20 @@
       </header>
     </div>
 
+    <!-- Home & super login: minimal header — logo + language only -->
+    <header v-if="isHome || isMinimalAuth" class="restro-header">
+      <div class="restro-header__inner">
+        <router-link to="/" class="restro-header__brand">
+          <img src="/assets/logo/airestro360.png" alt="AiRestro360" class="restro-header__logo" />
+        </router-link>
+        <div class="restro-header__actions">
+          <LanguageSwitcher class="restro-header__lang" />
+        </div>
+      </div>
+    </header>
+
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="main-content" :class="{ 'main-content--home': isHome || isMinimalAuth }">
       <router-view></router-view>
     </main>
 
@@ -140,8 +152,8 @@
       </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="footer bg-dark text-light py-5">
+    <!-- Footer (omitted on home landing) -->
+    <footer v-if="!isHome && !isMinimalAuth" class="footer bg-dark text-light py-5">
       <div class="container">
         <div class="row">
           <div class="col-md-4 mb-4">
@@ -190,7 +202,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from "vue";
+import { ref, watch, onMounted, onUnmounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import { Modal } from 'bootstrap';
 import Swal from 'sweetalert2';
@@ -205,6 +217,22 @@ let restaurantLoginModal = null;
 
 // Get the current route
 const route = useRoute();
+
+const isHome = computed(() => route.name === 'home');
+const isMinimalAuth = computed(() => route.name === 'login' || route.name === 'super-login');
+
+watch(
+  [isHome, isMinimalAuth],
+  ([home, minimal]) => {
+    if (home || minimal) document.body.classList.add('restro-body-home');
+    else document.body.classList.remove('restro-body-home');
+  },
+  { immediate: true }
+);
+
+onUnmounted(() => {
+  document.body.classList.remove('restro-body-home');
+});
 
 // Reserved for hiding the fixed navbar during navigation (e.g. future loading UX)
 const isNavigating = ref(false);
@@ -810,5 +838,83 @@ border-bottom: 1px solid #a31515; height: 40px; display: flex; align-items: cent
   .footer-home .text-end, .footer-home .text-start {
     text-align: center !important;
   }
+}
+</style>
+
+<style>
+/* Home path /: drop default body offset; sticky minimal header */
+body.restro-body-home {
+  padding-top: 0 !important;
+  background: #fff !important;
+}
+
+body.restro-body-home #app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+body.restro-body-home .frontend-layout {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.restro-header {
+  position: sticky;
+  top: 0;
+  z-index: 1050;
+  background: #fff;
+  box-shadow: none;
+  border-bottom: none;
+}
+
+.restro-header__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.9rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.restro-header__brand {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.restro-header__logo {
+  height: 72px;
+  width: auto;
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.restro-header__actions {
+  display: flex;
+  align-items: center;
+}
+
+.restro-header .language-btn {
+  color: #1a1a1a !important;
+  background: #fff !important;
+  border: 1px solid #ddd !important;
+}
+
+.restro-header .language-btn:hover {
+  border-color: #00844d !important;
+}
+
+.main-content--home {
+  padding-top: 0;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
 }
 </style>

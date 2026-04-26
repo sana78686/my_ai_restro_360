@@ -45,42 +45,6 @@
             <div class="card-body p-4 p-md-5">
               <div class="text-center mb-3" style="font-size: 1.1rem; color: #222;">
                 {{  $t('auth.register.intro') }}
-                <br>
-
-                <!-- Location Status -->
-                <div class="mb-3">
-                  <div v-if="locationLoading" class="text-primary">
-                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                    <small>{{  $t('auth.register.locationGetting') }}</small>
-                  </div>
-                  <div v-else-if="userLocation" class="text-success">
-                    <i class="fas fa-map-marker-alt me-2"></i>
-                    <small>
-                      {{  $t('auth.register.locationText') }}
-                      ({{ userLocation.lat.toFixed(4) }}, {{ userLocation.lng.toFixed(4) }})
-                    </small>
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-primary ms-2"
-                      @click="getUserLocation"
-                      :title="$t('common.refreshLocation')"
-                    >
-                      <i class="fas fa-sync-alt"></i>
-                    </button>
-                  </div>
-                  <div v-else-if="locationError" class="text-warning">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <small>{{ locationError }}</small>
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-warning ms-2"
-                      @click="getUserLocation"
-                      :title="$t('common.tryAgain')"
-                    >
-                      <i class="fas fa-redo"></i>
-                    </button>
-                  </div>
-                </div>
               </div>
 
               <!-- Selected Plan Info Banner -->
@@ -338,6 +302,7 @@ from 'vue'
 // const { $t} = useI18n()
 import { useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
+import { loadGoogleMapsPlaces } from '../../utils/googleMapsPlacesLoader.js'
 import { Tooltip } from 'bootstrap'
 import { VueTelInput } from 'vue-tel-input'
 
@@ -450,8 +415,6 @@ export default {
 
     // User location state
     const userLocation = ref(null)
-    const locationLoading = ref(false)
-    const locationError = ref(null)
     const countryDetecting = ref(false)
 
     // Update public_phone with country code and formatted number (must be defined before watch — const is not hoisted)
@@ -488,22 +451,12 @@ export default {
     }
 
     const loadGooglePlacesScript = () => {
-      const script = document.createElement('script')
-      script.src = `https://maps.google.com/maps/api/js?key=AIzaSyCZDgTTb7vm0co-2yHGinkgSs_yDTNtbSo&libraries=places`
-      script.async = true
-      script.defer = true
-      script.onload = initGooglePlaces
-      document.head.appendChild(script)
+      loadGoogleMapsPlaces(initGooglePlaces)
     }
 
-    // Get user's current location
+    // Get user's current location (silent: biases restaurant suggestions; no UI banner)
     const getUserLocation = () => {
-      locationLoading.value = true
-      locationError.value = null
-
       if (!navigator.geolocation) {
-        locationError.value = 'Geolocation is not supported by this browser.'
-        locationLoading.value = false
         return
       }
 
@@ -513,16 +466,10 @@ export default {
             lat: position.coords.latitude,
             lng: position.coords.longitude
           }
-          locationLoading.value = false
-          console.log('User location obtained:', userLocation.value)
-
-          // Get country from coordinates and set phone country
           getCountryFromCoordinates(userLocation.value.lat, userLocation.value.lng)
         },
         (error) => {
-          locationError.value = 'Unable to get your location. Please enable location services.'
-          locationLoading.value = false
-          console.error('Location error:', error)
+          console.warn('Location unavailable for suggestions:', error)
         },
         {
           enableHighAccuracy: true,
@@ -790,16 +737,6 @@ export default {
     const handleSubmit = async () => {
       if (loading.value) return;
 
-      // Validate passwords match
-      if (form.value.password !== form.value.passwordConfirmation) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Password Mismatch',
-          text: 'Password and confirmation do not match'
-        });
-        return;
-      }
-
       // Validate required fields
       if (!form.value.businessName || !form.value.subdomain || !form.value.ownerName ||
           !form.value.public_email || !form.value.public_phone || !form.value.password || !form.value.acceptTerms) {
@@ -832,7 +769,6 @@ export default {
           owner_email: form.value.public_email,
           owner_phone: form.value.public_phone,
           password: form.value.password,
-          password_confirmation: form.value.passwordConfirmation,
           message: form.value.message || '',
           is_custom_location: form.value.isCustomLocation
         }
@@ -919,8 +855,6 @@ export default {
       selectCountry,
       selectedCountryFlag,
       userLocation,
-      locationLoading,
-      locationError,
       countryDetecting,
       getUserLocation,
       contactPhone,

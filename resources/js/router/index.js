@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import DashboardLayout from '../layouts/DashboardLayout.vue';
 import FrontendLayout from '../layouts/FrontendLayout.vue';
 import { getAppName, getAppNameSync } from '../utils/appName';
+import i18n from '../i18n';
 
 const routes = [
   // Frontend Routes
@@ -12,7 +13,7 @@ const routes = [
       {
         path: '',
         name: 'home',
-        meta: { title: 'Home' },
+        meta: { title: 'Get started', i18nDescription: 'home.landing.seoDescription' },
         component: () => import('../views/frontend/Home.vue')
       },
       {
@@ -159,6 +160,11 @@ router.beforeEach((to, from, next) => {
   next();
 });
 router.afterEach(async (to) => {
+  const loc = i18n.global.locale?.value || i18n.global.locale
+  if (loc) {
+    document.documentElement.lang = String(loc)
+  }
+
   // Collect titles from all matched routes (parents + child)
   const titleParts = to.matched
     .filter(record => record.meta && record.meta.title)
@@ -176,6 +182,34 @@ router.afterEach(async (to) => {
 
   // Final tab title
   document.title = `${fullTitle} - ${appName}`
+
+  const metaDesc = document.querySelector('meta[name="description"]')
+  if (metaDesc) {
+    const withDesc = [...to.matched]
+      .reverse()
+      .find((r) => r.meta && (r.meta.i18nDescription || r.meta.description))
+    if (withDesc?.meta?.i18nDescription) {
+      metaDesc.setAttribute('content', i18n.global.t(withDesc.meta.i18nDescription))
+    } else if (withDesc?.meta?.description) {
+      metaDesc.setAttribute('content', withDesc.meta.description)
+    } else {
+      metaDesc.setAttribute(
+        'content',
+        'Register your restaurant on AiRestro 360. Online orders, operations, and guest service in one place.'
+      )
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    let can = document.querySelector('link[rel="canonical"]')
+    if (!can) {
+      can = document.createElement('link')
+      can.setAttribute('rel', 'canonical')
+      document.head.appendChild(can)
+    }
+    const path = to.path || '/'
+    can.setAttribute('href', window.location.origin + (path.startsWith('/') ? path : `/${path}`))
+  }
 })
 
 export default router;

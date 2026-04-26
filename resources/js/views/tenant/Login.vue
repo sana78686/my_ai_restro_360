@@ -1,117 +1,264 @@
 <template>
-  <div class="login-form login-card-inner mt-5 p-4 p-md-5">
-    <div class="login-card d-flex flex-row  mt-5  overflow-hidden bg-white">
-      <!-- Left: Image -->
-      <div class="login-image  d-none d-md-block">
-        <img src="/Mox_files/login.jpg" alt="Login Food" class="img-fluid rounded-2 h-100 w-100" style="object-fit: cover;"/>
-      </div>
-      <!-- Right: Form -->
-      <div class="login-form login-card-inner   p-4 p-md-5 d-flex flex-column justify-content-center">
-        <h2 class="text-center mb-2 login-title">{{ $t('auth.login.title') }}</h2>
-      <!--  <div class="text-center mb-3 login-subtext">Don't have an account? <a href="#" class="login-link">Sign up now!</a></div> -->
-      <div class="text-center mb-3 login-subtext">{{ $t('welcomeBack') || 'Welcome!' }}</div>
-        <form @submit.prevent="handleLogin">
-          <div class="mb-3">
-            <div class="input-group">
-              <span class="input-group-text bg-white"><i class="material-icons text-muted">person</i></span>
-              <input type="text" class="form-control" :placeholder="$t('auth.login.email')" v-model="username" required />
+  <div class="restro-login">
+    <div class="restro-login__center">
+      <h1 class="restro-login__title">{{ $t('auth.login.title') }}</h1>
+      <form class="restro-form" @submit.prevent="onSubmit" novalidate>
+          <p
+            v-if="showRegisteredInfo"
+            class="restro-form__msg restro-form__msg--info"
+            role="status"
+          >
+            {{ $t('auth.login.registeredInfo') }}
+          </p>
+          <p v-if="formError" class="restro-form__msg restro-form__msg--error" role="alert">
+            {{ formError }}
+          </p>
+          <p
+            v-if="showVerifyPanel && !formError"
+            class="restro-form__msg restro-form__msg--info"
+            role="status"
+          >
+            {{ $t('auth.login.emailVerifyHint') }}
+          </p>
+
+          <div v-show="!showVerifyPanel" class="restro-form__stack">
+            <div class="restro-form__field">
+              <div class="restro-form__label-row">
+                <label class="restro-form__label" for="tenant-login-email">{{
+                  $t('auth.login.email')
+                }}</label>
+                <RestroInfoTip :text="$t('auth.login.tipEmail')" />
+              </div>
+              <input
+                id="tenant-login-email"
+                v-model.trim="username"
+                type="text"
+                class="restro-form__input"
+                autocomplete="username"
+                :placeholder="$t('auth.login.email')"
+                :disabled="loading"
+                required
+              />
             </div>
-          </div>
-          <div class="mb-3">
-            <div class="input-group">
-              <span class="input-group-text bg-white"><i class="material-icons text-muted">lock</i></span>
-              <input :type="showPassword ? 'text' : 'password'" class="form-control" :placeholder="$t('auth.login.password')" v-model="password" required />
-              <span class="input-group-text bg-white" style="cursor:pointer;" @click="showPassword = !showPassword">
-                <i class="material-icons text-muted">{{ showPassword ? 'visibility_off' : 'visibility' }}</i>
-              </span>
+            <div class="restro-form__field restro-form__field--pw">
+              <div class="restro-form__label-row">
+                <label class="restro-form__label" for="tenant-login-pw">{{
+                  $t('auth.login.password')
+                }}</label>
+                <RestroInfoTip :text="$t('auth.login.tipPassword')" />
+              </div>
+              <div class="restro-form__pw-inner">
+                <input
+                  id="tenant-login-pw"
+                  v-model="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  class="restro-form__input restro-form__input--with-toggle"
+                  autocomplete="current-password"
+                  :placeholder="$t('auth.login.password')"
+                  :disabled="loading"
+                  required
+                />
+                <button
+                  type="button"
+                  class="restro-form__pw-toggle"
+                  :aria-pressed="showPassword"
+                  :aria-label="showPassword ? $t('auth.login.hidePassword') : $t('auth.login.showPassword')"
+                  @click="showPassword = !showPassword"
+                >
+                  <i
+                    class="restro-form__pw-icon"
+                    :class="showPassword ? 'far fa-eye-slash' : 'far fa-eye'"
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
             </div>
+            <div class="restro-form__check-row">
+              <input
+                id="tenant-login-remember"
+                v-model="keepSignedIn"
+                type="checkbox"
+                class="restro-form__checkbox"
+              />
+              <label for="tenant-login-remember">{{ $t('auth.login.remember') }}</label>
+            </div>
+            <button class="restro-form__submit" type="submit" :disabled="loading">
+              {{ loading && !showVerifyPanel ? '…' : $t('auth.login.submit') }}
+            </button>
+            <router-link class="restro-form__link" to="/forgot-password">{{
+              $t('auth.login.forgot')
+            }}</router-link>
           </div>
-          <div class="d-flex align-items-center mb-3">
-            <input type="checkbox" id="keepSignedIn" v-model="keepSignedIn" class="form-check-input me-2" />
-            <label for="keepSignedIn" class="form-check-label small">{{ $t('auth.login.remember') }}</label>
-          </div>
-          <button type="submit" class="btn btn-success w-100 fw-bold mb-3 login-btn">
-            <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
-            {{ loading ? $t('auth.login.submitting') : $t('auth.login.submit') }}
-          </button>
-        </form>
-        <!-- <div class="d-flex align-items-center my-3">
-          <hr class="flex-grow-1" />
-          <span class="mx-2 login-or">or Sign in with one click</span>
-          <hr class="flex-grow-1" />
-        </div>
-        <div class="d-flex justify-content-center gap-3 mb-3">
-          <button class="btn btn-light shadow-sm rounded-circle p-2 login-social"><i class="fab fa-facebook-f text-danger"></i></button>
-          <button class="btn btn-light shadow-sm rounded-circle p-2 login-social"><i class="fab fa-twitter text-danger"></i></button>
-          <button class="btn btn-light shadow-sm rounded-circle p-2 login-social"><i class="fab fa-google text-danger"></i></button>
-        </div> -->
-        <div class="text-end mt-2">
-          <!-- <a href="#" class="login-reset"><i class="material-icons align-middle" style="font-size: 1.1em;">key</i> {{ $t('auth.login.forgot') }}</a> -->
-        <router-link to="/forgot-password" class="login-reset">
-    <i class="material-icons align-middle" style="font-size: 1.1em;">key</i>
-    {{ $t('auth.login.forgot') }}
-  </router-link>
-        </div>
-      </div>
+
+          <template v-if="showVerifyPanel">
+            <hr class="restro-form__hr" />
+            <div class="restro-form__verify" role="region" :aria-label="$t('auth.otp.title')">
+              <p class="restro-form__verify-title">{{ $t('auth.otp.subtitle') }}</p>
+              <p class="restro-form__verify-hint">{{ $t('auth.login.otpOnSamePage') }}</p>
+              <div class="restro-form__field">
+                <div class="restro-form__label-row">
+                  <label class="restro-form__label" for="tenant-verify-otp">{{
+                    $t('auth.otp.placeholder')
+                  }}</label>
+                  <RestroInfoTip :text="$t('auth.login.tipOtp')" />
+                </div>
+                <input
+                  id="tenant-verify-otp"
+                  v-model="verifyOtp"
+                  type="text"
+                  class="restro-form__input"
+                  inputmode="numeric"
+                  maxlength="6"
+                  pattern="[0-9]*"
+                  autocomplete="one-time-code"
+                  :disabled="verifyLoading"
+                  :placeholder="$t('auth.otp.placeholder')"
+                />
+              </div>
+              <p v-if="verifyError" class="restro-form__msg restro-form__msg--error" role="alert">
+                {{ verifyError }}
+              </p>
+              <div class="restro-form__row--2 restro-form__row--verify-actions">
+                <button
+                  type="submit"
+                  class="restro-form__submit"
+                  :disabled="verifyLoading || !canVerifyOtp"
+                >
+                  {{ verifyLoading ? '…' : $t('auth.otp.submit') }}
+                </button>
+                <button
+                  type="button"
+                  class="restro-form__subbtn"
+                  :disabled="verifyLoading || resendCooldown > 0"
+                  @click="handleResendOtp"
+                >
+                  {{
+                    resendCooldown > 0
+                      ? `${$t('auth.otp.resend')} (${resendCooldown}s)`
+                      : $t('auth.otp.resend')
+                  }}
+                </button>
+              </div>
+            </div>
+          </template>
+      </form>
     </div>
   </div>
 </template>
 
-
 <script setup>
-import { ref , onMounted} from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
-import { logTenantOtpFromTableIfPending } from '@/utils/tenantOtpFromTable'
+import { logTenantOtpFromTableIfPending } from '../../utils/tenantOtpFromTable'
+import RestroInfoTip from '../../components/frontend/RestroInfoTip.vue'
+
+const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 
 const username = ref('')
 const password = ref('')
 const showPassword = ref(false)
 const keepSignedIn = ref(false)
-const router = useRouter()
 const loading = ref(false)
-const error = ref('')
+const formError = ref('')
 
-async function handleLogin() {
-  error.value = ''
+const showVerifyPanel = ref(false)
+const verifyOtp = ref('')
+const verifyLoading = ref(false)
+const verifyError = ref('')
+const resendCooldown = ref(0)
+let resendTimer = null
+
+const canVerifyOtp = computed(
+  () => verifyOtp.value && verifyOtp.value.length === 6 && /^\d{6}$/.test(verifyOtp.value)
+)
+
+const showRegisteredInfo = computed(() => route.query.registered === '1')
+
+function clearResendTimer() {
+  if (resendTimer) {
+    clearInterval(resendTimer)
+    resendTimer = null
+  }
+}
+
+function startResendCooldown() {
+  resendCooldown.value = 60
+  clearResendTimer()
+  resendTimer = setInterval(() => {
+    resendCooldown.value--
+    if (resendCooldown.value <= 0) clearResendTimer()
+  }, 1000)
+}
+
+onMounted(() => {
+  const pendingEmail = localStorage.getItem('pending_verification_email')
+  if (pendingEmail) username.value = pendingEmail
+  // Only force OTP UI for explicit deep-links (e.g. reset-password). Stale pending_verification_email
+  // after admin approval must not hide the password form — user signs in and goes straight to dashboard.
+  if (route.query.verify === '1') {
+    showVerifyPanel.value = true
+  }
+  if (showVerifyPanel.value) void logTenantOtpFromTableIfPending()
+})
+
+onBeforeUnmount(() => clearResendTimer())
+
+watch(
+  () => route.query.verify,
+  (v) => {
+    if (v === '1') showVerifyPanel.value = true
+  }
+)
+
+async function onSubmit() {
+  formError.value = ''
+  if (showVerifyPanel.value) {
+    await handleVerifyOtp()
+    return
+  }
   loading.value = true
   try {
     const response = await window.axios.post('/tenant/login', {
       email: username.value,
-      password: password.value,
+      password: password.value
     })
 
-    // CASE 1: Email not verified → OTP required
     if (response.data.status === 'verify_required') {
-      // Save temporary user/email so Verify page knows who is verifying
       localStorage.setItem('pending_verification_email', username.value)
+      showVerifyPanel.value = true
+      verifyError.value = ''
       void logTenantOtpFromTableIfPending()
-
-      await Swal.fire({
-        icon: 'info',
-        title: 'Email Verification Required',
-        text: 'We have sent an OTP to your email. Please verify to continue.',
-        confirmButtonColor: '#3085d6'
-      })
-
-      router.push('/verify-otp') // redirect to OTP verification page
       return
     }
 
-    // CASE 2: Login success → store token
     const token = response.data.token
     localStorage.setItem('token', token)
+    localStorage.removeItem('pending_verification_email')
+    showVerifyPanel.value = false
     window.axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
-  navigator.geolocation.getCurrentPosition(async (pos) => {
-  const token = localStorage.getItem('token')
-  await window.axios.post('/tenant/update-location', {
-    latitude: pos.coords.latitude,
-    longitude: pos.coords.longitude,
-  }, {
-    headers: { Authorization: `Bearer ${token}` }
-  })
-})
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const t0 = localStorage.getItem('token')
+        if (!t0) return
+        try {
+          await window.axios.post(
+            '/tenant/update-location',
+            {
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude
+            },
+            { headers: { Authorization: `Bearer ${t0}` } }
+          )
+        } catch {
+          /* optional */
+        }
+      })
+    }
 
     await Swal.fire({
       icon: 'success',
@@ -122,226 +269,340 @@ async function handleLogin() {
       position: 'top-end',
       toast: true
     })
-
     router.push('/dashboard/home')
   } catch (err) {
-    error.value = err.response?.data?.message || 'Login failed. Please check your credentials.'
-    Swal.fire({
-      icon: 'error',
-      title: 'Login Failed',
-      text: error.value,
-      confirmButtonColor: '#dc3545'
-    })
+    const st = err.response?.data?.status
+    const adminPending = err.response?.status === 403 && st === 'admin_pending'
+    formError.value = adminPending
+      ? t('auth.login.adminPending')
+      : err.response?.data?.message || 'Login failed. Please check your credentials.'
+    if (!adminPending) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        text: formError.value,
+        confirmButtonColor: '#dc3545'
+      })
+    }
   } finally {
     loading.value = false
   }
 }
 
+async function handleVerifyOtp() {
+  verifyError.value = ''
+  if (!canVerifyOtp.value) {
+    verifyError.value = t('auth.otp.invalidOtp')
+    return
+  }
+  verifyLoading.value = true
+  try {
+    const email = localStorage.getItem('pending_verification_email') || username.value
+    if (!email) {
+      throw new Error('No pending verification email')
+    }
+    const response = await window.axios.post('/tenant/verify-otp', {
+      email,
+      otp: verifyOtp.value
+    })
+    if (response.data.success) {
+      const token = response.data.token
+      localStorage.setItem('token', token)
+      localStorage.removeItem('pending_verification_email')
+      window.axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      showVerifyPanel.value = false
+      await Swal.fire({
+        icon: 'success',
+        title: t('auth.otp.verificationSuccess'),
+        text: response.data.message || t('auth.otp.verificationSuccessMessage'),
+        timer: 2000,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      })
+      router.push('/dashboard/home')
+    } else {
+      throw new Error(response.data.message || t('auth.otp.verificationErrorMessage'))
+    }
+  } catch (err) {
+    let msg = t('auth.otp.verificationErrorMessage')
+    if (err.response?.status === 403) msg = t('auth.login.adminPending')
+    else if (err.response?.data?.message) msg = err.response.data.message
+    else if (err.response?.status === 422) msg = t('auth.otp.invalidOtp')
+    else if (err.response?.status === 410) msg = t('auth.otp.otpExpired')
+    verifyError.value = msg
+  } finally {
+    verifyLoading.value = false
+  }
+}
 
-
-
+async function handleResendOtp() {
+  if (resendCooldown.value > 0) return
+  verifyLoading.value = true
+  verifyError.value = ''
+  try {
+    const email = localStorage.getItem('pending_verification_email') || username.value
+    if (!email) throw new Error('No email')
+    const response = await window.axios.post('/tenant/resend-otp', { email })
+    if (response.data.success) {
+      startResendCooldown()
+      await Swal.fire({
+        icon: 'success',
+        title: t('auth.otp.resendSuccess'),
+        timer: 1500,
+        showConfirmButton: false,
+        position: 'top-end',
+        toast: true
+      })
+    } else {
+      throw new Error(response.data.message || t('auth.otp.resendErrorMessage'))
+    }
+  } catch (err) {
+    verifyError.value =
+      err.response?.status === 403
+        ? t('auth.login.adminPending')
+        : err.response?.data?.message || t('auth.otp.resendErrorMessage')
+  } finally {
+    verifyLoading.value = false
+  }
+}
 </script>
 
-
-
 <style scoped>
-.login-page {
-  background: #f8f9fa;
-}
-.login-card {
-  /* min-width: 1000px; */
-  max-width: 900px;
-  min-height: 350px;
-  background: #fff;
-}
-.login-image {
-  width: 500px;
-  min-height: 350px;
-  background: #eee;
-  /* border-radius: 8px; */
-}
-.login-form {
-  flex: 1 1 0%;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  /* min-width: 500px;
-  max-width: 100%; */
-  align-items: center;
+.restro-login {
   width: 100%;
+  flex: 1 1 auto;
   display: flex;
+  align-items: center;
   justify-content: center;
-}
-.input-group-text {
-  background: #fff;
-  border-right: 0;
-  border-radius: 6px 0 0 6px;
-}
-.form-control {
-  border-left: 0;
-  border-radius: 0 6px 6px 0;
-  box-shadow: none;
-}
-.btn-success {
-  background: #388e3c;
-  border: none;
-}
-.btn-success:hover {
-  background: #2e7031;
-  border: none;
-}
-.btn-light {
-  background: #fff;
-  border: 1px solid #eee;
-}
-.btn-light:hover {
-  background: #f5f5f5;
-}
-@media (max-width: 991.98px) {
-  .login-card {
-    flex-direction: column;
-    min-width: 320px;
-    max-width: 95vw;
-  }
-  .login-image {
-    width: 100%;
-    min-height: 180px;
-    max-height: 220px;
-  }
-  .login-form {
-    min-width: 100%;
-    max-width: 100%;
-  }
-  .login-card-inner {
-    min-width: 100%;
-    max-width: 100%;
-  }
+  min-height: 0;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-@media (max-width: 767.98px) {
-  .login-page {
-    padding: 1rem;
-  }
-  .login-card {
-    min-width: 100%;
-    max-width: 100%;
-    border-radius: 12px;
-  }
-
-
-  .login-title {
-    font-size: 1.75rem;
-  }
-  .login-subtext {
-    font-size: 0.95rem;
-  }
-  .login-form {
-    padding: 1.5rem !important;
-  }
+.restro-login__center {
+  width: 100%;
+  max-width: 32rem;
 }
 
-/* Android-specific fixes */
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-  .login-page,
-  .login-card {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    -webkit-font-smoothing: antialiased;
-  }
+.restro-login__title {
+  font-size: 1.28rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0 0 1.35rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  text-align: center;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+</style>
 
-  input {
-    -webkit-appearance: none;
-    -webkit-border-radius: 4px;
-    border-radius: 4px;
-    font-size: 16px; /* Prevents zoom on Android */
-  }
-
-  button, .btn {
-    -webkit-tap-highlight-color: rgba(67, 160, 71, 0.2);
-    touch-action: manipulation;
-  }
+<!-- Register-style form controls (match Home.vue) -->
+<style>
+.restro-login .restro-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
 }
-
-@media (max-width: 575.98px) {
-  .login-page {
-    padding: 0.5rem;
-  }
-  .login-card {
-    border-radius: 8px;
-  }
-  .login-title {
-    font-size: 1.5rem;
-  }
-  .login-subtext {
-    font-size: 0.9rem;
-  }
-  .login-form {
-    padding: 1rem !important;
-  }
-  .login-btn {
-    font-size: 1rem;
-  }
+.restro-login .restro-form__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
 }
-/* Login Card Inner Styling */
-.login-card-inner {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-  /* min-width: 500px; */
-  /* max-width: 500px; */
-  margin: 0 auto;
+.restro-login .restro-form__row--2 {
+  display: grid;
+  gap: 0.5rem;
 }
-.login-title {
-  font-family: 'Playfair Display', serif;
-  font-weight: bold;
-  color: #222;
-  font-size: 2rem;
+.restro-login .restro-form__row--verify-actions {
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
 }
-.login-subtext {
-  color: #388e3c;
-  font-size: 1rem;
+.restro-login .restro-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
 }
-.login-link {
-  color: #388e3c;
-  text-decoration: none;
-  font-weight: 500;
+.restro-login .restro-form__label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
-.login-link:hover {
-  text-decoration: underline;
-}
-.login-btn {
-  background: #43a047;
-  border-color: #43a047;
-  border-radius: 4px;
+.restro-login .restro-form__label {
+  font-size: 0.875rem;
   font-weight: 600;
-  font-size: 1.05rem;
+  color: #333;
+  margin: 0;
 }
-.login-btn:hover {
-  background: #388e3c;
-  border-color: #388e3c;
-}
-.login-or {
-  color: #888;
-  font-size: 0.97rem;
-}
-.login-social {
+.restro-login .restro-form__input,
+.restro-login .restro-form__select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #d0d0d0;
+  border-radius: 10px;
+  padding: 0.68rem 0.9rem;
+  font-size: 1rem;
   background: #fff;
-  border: 1px solid #eee;
-  transition: box-shadow 0.2s;
+  color: #111;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
-.login-social:hover {
-  box-shadow: 0 2px 8px rgba(67,160,71,0.12);
+.restro-login .restro-form__input::placeholder {
+  color: #9a9a9a;
+  opacity: 1;
+  font-size: 0.95rem;
 }
-.login-reset {
-  color: #444;
-  font-size: 0.97rem;
+.restro-login .restro-form__input:focus,
+.restro-login .restro-form__select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #00844d 25%, #fff);
+  border-color: #00844d;
+}
+.restro-login .restro-form__field--pw {
+  position: relative;
+}
+.restro-login .restro-form__pw-inner {
+  position: relative;
+  display: block;
+}
+.restro-login .restro-form__pw-toggle {
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: color-mix(in srgb, #00844d 6%, #fff);
+  color: #00844d;
+  cursor: pointer;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+.restro-login .restro-form__pw-toggle:hover {
+  background: color-mix(in srgb, #00844d 12%, #fff);
+  color: #006a3e;
+}
+.restro-login .restro-form__pw-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px color-mix(in srgb, #00844d 40%, #fff);
+}
+.restro-login .restro-form__pw-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.restro-login .restro-form__input--with-toggle {
+  padding-right: 3.25rem;
+}
+.restro-login .restro-form__check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: #333;
+}
+.restro-login .restro-form__checkbox {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #00844d;
+}
+.restro-login .restro-form__link {
+  color: #00844d;
+  font-weight: 600;
   text-decoration: none;
-  transition: color 0.2s;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-top: 0.15rem;
 }
-.login-reset:hover {
-  color: #43a047;
+.restro-login .restro-form__link:hover {
   text-decoration: underline;
+}
+.restro-login .restro-form__msg {
+  margin: 0 0 0.5rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+}
+.restro-login .restro-form__msg--error {
+  color: #6e1414;
+  background: #fff0f0;
+  border: 1px solid #e8b4b4;
+}
+.restro-login .restro-form__msg--info {
+  color: #1a3d66;
+  background: #f0f6ff;
+  border: 1px solid #b8cceb;
+}
+.restro-login .restro-form__submit {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  background: #00844d;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.88rem 1.15rem;
+  cursor: pointer;
+  margin-top: 0.25rem;
+  transition: filter 0.15s, opacity 0.15s;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+.restro-login .restro-form__submit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #00844d;
+}
+.restro-login .restro-form__submit:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+.restro-login .restro-form__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.restro-login .restro-form__subbtn {
+  border: none;
+  background: none;
+  color: #00844d;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.4rem 0.25rem;
+  text-align: center;
+  text-decoration: underline;
+  font-family: inherit;
+}
+.restro-login .restro-form__subbtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+.restro-login .restro-form__hr {
+  border: none;
+  border-top: 1px solid #e8e8e8;
+  margin: 0.4rem 0 0.6rem;
+}
+.restro-login .restro-form__verify-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+.restro-login .restro-form__verify-hint {
+  font-size: 0.8rem;
+  color: #5e5e5e;
+  margin: 0 0 0.35rem;
+  line-height: 1.4;
+}
+@media (max-width: 480px) {
+  .restro-login .restro-form__row--verify-actions {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

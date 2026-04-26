@@ -96,6 +96,7 @@ Route::prefix('dashboard')->group(function () {
     // Route::get('/tenants', [DashboardTenantController::class, 'index']);
     Route::get('/tenants/{id}', [DashboardTenantController::class, 'show']);
     Route::patch('/tenants/{id}/status', [DashboardTenantController::class, 'updateStatus']);
+    Route::post('/tenants/{id}/approve-account', [DashboardTenantController::class, 'approveOwnerAccount']);
 
         Route::get('/mail-logs', [SuperAdminMailLogController::class, 'SuperAdminMailLog']);
 

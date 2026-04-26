@@ -70,11 +70,8 @@ window.axios.interceptors.response.use(response => {
 
 // Use plugins
 const host = window.location.host
-console.log("check host:", host);
 const mainDomain = window.MAIN_DOMAIN
-console.log("check mainDomain:", mainDomain);
 const isTenant = host && host !== mainDomain
-console.log("check tenant:", isTenant);
 if (isTenant) {
     void logTenantOtpFromTableIfPending()
 }

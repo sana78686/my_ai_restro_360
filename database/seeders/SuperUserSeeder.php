@@ -12,10 +12,10 @@ class SuperUserSeeder extends Seeder
     {
         // Create superuser account
         $superUser = User::create([
-            'name' => 'Super User',
-            'email' => 'super_user@example.com',
+            'name' => 'Super Admin',
+            'email' => 'sana22647@gmail.com',
             'email_verified_at' => now(),
-            'password' => Hash::make('password123'),
+            'password' => Hash::make('Restro360'),
         ]);
 
         // Assign super_user role

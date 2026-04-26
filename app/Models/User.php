@@ -30,7 +30,8 @@ class User extends Authenticatable
         'password',
         'restaurant_id',
         'otp',
-        'otp_expires_at'
+        'otp_expires_at',
+        'is_verified_by_admin',
     ];
 
     /**
@@ -52,6 +53,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'otp_expires_at' => 'datetime',
+        'is_verified_by_admin' => 'boolean',
     ];
 
     public function restaurant(): BelongsTo

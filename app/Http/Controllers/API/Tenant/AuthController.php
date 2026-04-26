@@ -75,6 +75,16 @@ class AuthController extends Controller
         $user = Auth::guard('tenant')->user();
 
         $this->createDefaultRoles();
+
+        if (! $user->is_verified_by_admin) {
+            Auth::guard('tenant')->logout();
+
+            return response()->json([
+                'status' => 'admin_pending',
+                'message' => 'Your account is pending. Please wait for an administrator to approve it before you can sign in.',
+            ], 403);
+        }
+
         // If email not verified, generate/send OTP and require verification
         if (! $user->email_verified_at) {
             $otp = (string) random_int(100000, 999999);
@@ -138,6 +148,13 @@ class AuthController extends Controller
                 'success' => false,
                 'message' => 'User not found.'
             ], 404);
+        }
+
+        if (! $user->is_verified_by_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is pending administrator approval.',
+            ], 403);
         }
 
         if (! $user->otp || ! $user->otp_expires_at || Carbon::parse($user->otp_expires_at)->isPast()) {
@@ -209,6 +226,13 @@ class AuthController extends Controller
                 'success' => false,
                 'message' => 'User not found.'
             ], 404);
+        }
+
+        if (! $user->is_verified_by_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is pending administrator approval.',
+            ], 403);
         }
 
         // If email not verified, generate/send OTP and require verification

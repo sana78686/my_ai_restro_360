@@ -42,13 +42,22 @@ class TenantController extends Controller
                 ], 422);
             }
 
-            // Validate request data
+            // Validate request data (no password confirmation — same rules as frontend)
             $validator = Validator::make($request->all(), [
                 'business_name' => 'required|string|max:255',
                 'subdomain' => 'required|string|max:255',
                 'owner_name' => 'required|string|max:255',
                 'owner_email' => 'required|email',
-                'password' => 'required|string|min:8|confirmed',
+                'owner_phone' => 'nullable|string|max:255',
+                'password' => [
+                    'required',
+                    'string',
+                    'min:8',
+                    'regex:/[A-Z]/',
+                    'regex:/[a-z]/',
+                    'regex:/[0-9]/',
+                    'regex:/[^A-Za-z0-9]/',
+                ],
             ]);
 
             if ($validator->fails()) {
@@ -120,6 +129,7 @@ class TenantController extends Controller
                     'name' => $request->owner_name,
                     'email' => $request->owner_email,
                     'password' => Hash::make($request->password),
+                    'is_verified_by_admin' => false,
                 ]);
 
                 // Setup roles and permissions

@@ -1,91 +1,59 @@
 <template>
-  <div class="mt-5 login-page d-flex align-items-center justify-content-center min-vh-100 bg-light">
-    <div class="login-card d-flex flex-row shadow overflow-hidden bg-white">
-      <!-- Left: Image -->
-      <div class="login-image d-none d-md-block">
-        <img src="/Mox_files/login.jpg" alt="Verify OTP" class="img-fluid h-100 w-100" style="object-fit: cover; min-width: 320px; min-height: 350px;" />
-      </div>
-
-      <!-- Right: Form -->
-      <div class="login-form login-card-inner p-4 p-md-5 d-flex flex-column justify-content-center">
-        <h2 class="text-center mb-2 login-title">{{ $t('auth.forgot.title') }}</h2>
-        <div class="text-center mb-3 login-subtext">{{ $t('auth.forgot.subtitle') }}</div>
-
-        <!-- Error Message -->
-        <div v-if="error" class="alert alert-danger mb-3" role="alert">
+  <div class="restro-login">
+    <div class="restro-login__center">
+      <h1 class="restro-login__title">{{ $t('auth.forgot.title') }}</h1>
+      <p class="restro-login__subtitle">{{ $t('auth.forgot.subtitle') }}</p>
+      <form class="restro-form" @submit.prevent="handleSendOtp" novalidate>
+        <p v-if="error" class="restro-form__msg restro-form__msg--error" role="alert">
           {{ error }}
-        </div>
-
-        <form @submit.prevent="handleSendOtp">
-          <div class="mb-3">
-            <div class="input-group">
-              <span class="input-group-text bg-white"><i class="material-icons text-muted">email</i></span>
-              <input
-                type="email"
-                autocomplete="email"
-                class="form-control"
-                :class="{ 'is-invalid': error }"
-                :placeholder="$t('auth.forgot.placeholder')"
-                v-model="email"
-                :disabled="loading"
-                maxlength="255"
-                pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
-                required
-              />
+        </p>
+        <div class="restro-form__stack">
+          <div class="restro-form__field">
+            <div class="restro-form__label-row">
+              <label class="restro-form__label" for="tenant-forgot-email">{{ $t('auth.login.email') }}</label>
+              <RestroInfoTip :text="$t('auth.login.tipEmail')" />
             </div>
-            <div v-if="error" class="invalid-feedback">
-              {{ error }}
-            </div>
+            <input
+              id="tenant-forgot-email"
+              v-model.trim="email"
+              type="email"
+              class="restro-form__input"
+              autocomplete="email"
+              :placeholder="$t('auth.forgot.placeholder')"
+              :disabled="loading"
+              maxlength="255"
+              required
+            />
           </div>
-
-          <button
-            type="submit"
-            class="btn btn-success w-100 fw-bold mb-3 login-btn"
-            :disabled="loading || !email"
-          >
-            <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-            {{ loading ? $t('common.processing') : $t('auth.forgot.submit') }}
+          <button class="restro-form__submit" type="submit" :disabled="loading || !email">
+            {{ loading ? '…' : $t('auth.forgot.submit') }}
           </button>
-        </form>
-
-        <!-- <div class="text-end mt-2">
-          <button
-            type="button"
-            class="btn btn-link login-reset p-0"
-            @click="handleResendOtp"
-            :disabled="loading || resendCooldown > 0"
-          >
-            <i class="material-icons align-middle" style="font-size: 1.1em;">refresh</i>
-            {{ resendCooldown > 0 ? `${$t('auth.forgot.resend')} (${resendCooldown}s)` : $t('auth.forgot.resend') }}
-          </button>
-        </div> -->
-      </div>
+          <router-link class="restro-form__link" to="/login">{{ $t('auth.forgot.backToSignIn') }}</router-link>
+        </div>
+      </form>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import Swal from 'sweetalert2'
+import RestroInfoTip from '../../components/frontend/RestroInfoTip.vue'
 
 const { t } = useI18n()
 const email = ref('')
 const router = useRouter()
 const loading = ref(false)
 const error = ref('')
-const resendCooldown = ref(0)
-let resendTimer = null
 
-// === Send Password Reset OTP ===
 async function handleSendOtp() {
   error.value = ''
   loading.value = true
   try {
     const response = await axios.post('/tenant/send-otp', { email: email.value })
-
     await Swal.fire({
       icon: 'success',
       title: t('auth.forgot.emailSentTitle') || 'OTP Sent',
@@ -95,15 +63,15 @@ async function handleSendOtp() {
       position: 'top-end',
       toast: true
     })
-
     localStorage.setItem('password_reset_email', email.value)
     router.push('/reset-password')
   } catch (err) {
     console.error('Send OTP error:', err)
-    error.value = err.response?.data?.message || t('auth.forgot.sendError') || 'Failed to send OTP. Please try again.'
+    error.value =
+      err.response?.data?.message || t('auth.forgot.sendError') || 'Failed to send OTP. Please try again.'
     Swal.fire({
       icon: 'error',
-      title: t('common.error'),
+      title: 'Error',
       text: error.value,
       confirmButtonColor: '#dc3545'
     })
@@ -111,261 +79,143 @@ async function handleSendOtp() {
     loading.value = false
   }
 }
-
-// === Resend OTP (password reset) ===
-async function handleResendOtp() {
-  if (resendCooldown.value > 0) return
-  loading.value = true
-  error.value = ''
-
-  try {
-    const targetEmail = email.value || localStorage.getItem('password_reset_email')
-    if (!targetEmail) throw new Error('No email provided')
-
-    const response = await axios.post('/tenant/send-otp', { email: targetEmail })
-
-    if (response.data.success) {
-      Swal.fire({
-        icon: 'success',
-        title: t('auth.otp.resendSuccess'),
-        text: response.data.message,
-        timer: 1500,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true
-      })
-      startResendCooldown()
-    } else {
-      throw new Error(response.data.message || t('auth.otp.resendErrorMessage'))
-    }
-  } catch (err) {
-    console.error('Resend OTP error:', err)
-    error.value = err.response?.data?.message || t('auth.otp.resendErrorMessage')
-
-    Swal.fire({
-      icon: 'error',
-      title: t('common.error'),
-      text: error.value,
-      confirmButtonColor: '#dc3545'
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
-// === Cooldown timer ===
-function startResendCooldown() {
-  resendCooldown.value = 60
-  resendTimer = setInterval(() => {
-    resendCooldown.value--
-    if (resendCooldown.value <= 0) {
-      clearInterval(resendTimer)
-      resendTimer = null
-    }
-  }, 1000)
-}
-
-onBeforeUnmount(() => {
-  if (resendTimer) clearInterval(resendTimer)
-})
 </script>
 
 <style scoped>
-/* ✅ keeping all your styles the same */
-</style>
-<style scoped>
-/* keeping your exact same styles */
-.login-page {
-  background: #f8f9fa;
-}
-.login-card {
-  min-width: 1000px;
-  max-width: 900px;
-  min-height: 350px;
-  background: #fff;
-}
-.login-image {
-  width: 500px;
-  min-height: 350px;
-  background: #eee;
-}
-.login-form {
-  flex: 1 1 0%;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  min-width: 500px;
-  max-width: 500px;
+.restro-login {
+  width: 100%;
+  flex: 1 1 auto;
+  display: flex;
   align-items: center;
-}
-.input-group-text {
-  background: #fff;
-  border-right: 0;
-  border-radius: 6px 0 0 6px;
-}
-.form-control {
-  border-left: 0;
-  border-radius: 0 6px 6px 0;
-  box-shadow: none;
-}
-.btn-success {
-  background: #388e3c;
-  border: none;
-}
-.btn-success:hover {
-  background: #2e7031;
-  border: none;
-}
-.btn-light {
-  background: #fff;
-  border: 1px solid #eee;
-}
-.btn-light:hover {
-  background: #f5f5f5;
-}
-@media (max-width: 991.98px) {
-  .login-card {
-    flex-direction: column;
-    min-width: 320px;
-    max-width: 95vw;
-  }
-  .login-image {
-    width: 100%;
-    min-height: 180px;
-    max-height: 220px;
-  }
-  .login-form {
-    min-width: 100%;
-    max-width: 100%;
-  }
-  .login-card-inner {
-    min-width: 100%;
-    max-width: 100%;
-  }
+  justify-content: center;
+  min-height: 0;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-@media (max-width: 767.98px) {
-  .login-page {
-    padding: 1rem;
-  }
-  .login-card {
-    min-width: 100%;
-    max-width: 100%;
-    border-radius: 12px;
-  }
-  .login-title {
-    font-size: 1.75rem;
-  }
-  .login-subtext {
-    font-size: 0.95rem;
-  }
-  .login-form {
-    padding: 1.5rem !important;
-  }
+.restro-login__center {
+  width: 100%;
+  max-width: 32rem;
 }
 
-/* Android-specific fixes */
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-  .login-page,
-  .login-card {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    -webkit-font-smoothing: antialiased;
-  }
-
-  input {
-    -webkit-appearance: none;
-    -webkit-border-radius: 4px;
-    border-radius: 4px;
-    font-size: 16px; /* Prevents zoom on Android */
-  }
-
-  button, .btn {
-    -webkit-tap-highlight-color: rgba(67, 160, 71, 0.2);
-    touch-action: manipulation;
-  }
+.restro-login__title {
+  font-size: 1.28rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0 0 0.5rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  text-align: center;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-@media (max-width: 575.98px) {
-  .login-page {
-    padding: 0.5rem;
-  }
-  .login-card {
-    border-radius: 8px;
-  }
-  .login-title {
-    font-size: 1.5rem;
-  }
-  .login-subtext {
-    font-size: 0.9rem;
-  }
-  .login-form {
-    padding: 1rem !important;
-  }
-  .login-btn {
-    font-size: 1rem;
-  }
+.restro-login__subtitle {
+  margin: 0 0 1.35rem;
+  font-size: 0.9rem;
+  color: #5e5e5e;
+  line-height: 1.45;
+  text-align: center;
 }
-/* Login Card Inner Styling */
-.login-card-inner {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-  min-width: 500px;
-  max-width: 500px;
-  margin: 0 auto;
+</style>
+
+<style>
+.restro-login .restro-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
 }
-.login-title {
-  font-family: 'Playfair Display', serif;
-  font-weight: bold;
-  color: #222;
-  font-size: 2rem;
+.restro-login .restro-form__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
 }
-.login-subtext {
-  color: #388e3c;
-  font-size: 1rem;
+.restro-login .restro-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
 }
-.login-link {
-  color: #388e3c;
-  text-decoration: none;
-  font-weight: 500;
+.restro-login .restro-form__label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
-.login-link:hover {
-  text-decoration: underline;
-}
-.login-btn {
-  background: #43a047;
-  border-color: #43a047;
-  border-radius: 4px;
+.restro-login .restro-form__label {
+  font-size: 0.875rem;
   font-weight: 600;
-  font-size: 1.05rem;
+  color: #333;
+  margin: 0;
 }
-.login-btn:hover {
-  background: #388e3c;
-  border-color: #388e3c;
-}
-.login-or {
-  color: #888;
-  font-size: 0.97rem;
-}
-.login-social {
+.restro-login .restro-form__input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #d0d0d0;
+  border-radius: 10px;
+  padding: 0.68rem 0.9rem;
+  font-size: 1rem;
   background: #fff;
-  border: 1px solid #eee;
-  transition: box-shadow 0.2s;
+  color: #111;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
-.login-social:hover {
-  box-shadow: 0 2px 8px rgba(67,160,71,0.12);
+.restro-login .restro-form__input::placeholder {
+  color: #9a9a9a;
+  opacity: 1;
+  font-size: 0.95rem;
 }
-.login-reset {
-  color: #444;
-  font-size: 0.97rem;
+.restro-login .restro-form__input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #00844d 25%, #fff);
+  border-color: #00844d;
+}
+.restro-login .restro-form__msg {
+  margin: 0 0 0.5rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+}
+.restro-login .restro-form__msg--error {
+  color: #6e1414;
+  background: #fff0f0;
+  border: 1px solid #e8b4b4;
+}
+.restro-login .restro-form__submit {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  background: #00844d;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.88rem 1.15rem;
+  cursor: pointer;
+  margin-top: 0.25rem;
+  transition: filter 0.15s, opacity 0.15s;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+.restro-login .restro-form__submit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #00844d;
+}
+.restro-login .restro-form__submit:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+.restro-login .restro-form__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.restro-login .restro-form__link {
+  color: #00844d;
+  font-weight: 600;
   text-decoration: none;
-  transition: color 0.2s;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-top: 0.15rem;
 }
-.login-reset:hover {
-  color: #43a047;
+.restro-login .restro-form__link:hover {
   text-decoration: underline;
 }
 </style>

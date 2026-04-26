@@ -73,6 +73,7 @@ class TenantController extends Controller
         // 🔹 Fetch logo from each tenant's database
         $tenantData = [];
         foreach ($tenants as $tenant) {
+            $ownerApproved = false;
             try {
                 // Switch to tenant DB
                 tenancy()->initialize($tenant);
@@ -81,6 +82,9 @@ class TenantController extends Controller
                 $logoUrl = DB::table('media')
                     ->where('model_type', 'App\\Models\\Setting')
                     ->value('custom_properties->public_url');
+
+                $ownerUser = User::query()->where('email', $tenant->owner_email)->first();
+                $ownerApproved = $ownerUser && $ownerUser->is_verified_by_admin;
 
                 $tenantData[] = [
                     'id' => $tenant->id,
@@ -94,6 +98,7 @@ class TenantController extends Controller
                     'logo' => $logoUrl,
                     'logo_url' => $logoUrl,
                     'created_at' => $tenant->created_at,
+                    'owner_account_approved' => $ownerApproved,
                 ];
             } catch (\Exception $e) {
                 // Fallback if logo cannot be fetched
@@ -110,6 +115,7 @@ class TenantController extends Controller
                     'logo' => null,
                     'logo_url' => null,
                     'created_at' => $tenant->created_at,
+                    'owner_account_approved' => $ownerApproved,
                 ];
             } finally {
                 tenancy()->end(); // always return to landlord DB
@@ -312,6 +318,48 @@ class TenantController extends Controller
             'success' => true,
             'message' => 'Tenant status updated successfully',
             'data' => $tenant
+        ]);
+    }
+
+    /**
+     * Allow the restaurant owner to sign in (and skip email OTP by marking email verified).
+     */
+    public function approveOwnerAccount(string $id)
+    {
+        $tenant = Tenant::findOrFail($id);
+
+        try {
+            tenancy()->initialize($tenant);
+
+            /** @var \App\Models\User|null $owner */
+            $owner = User::query()->where('email', $tenant->owner_email)->first();
+
+            if (! $owner) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Owner user not found for this restaurant.',
+                ], 404);
+            }
+
+            $owner->is_verified_by_admin = true;
+            if (! $owner->email_verified_at) {
+                $owner->email_verified_at = Carbon::now();
+            }
+            $owner->otp = null;
+            $owner->otp_expires_at = null;
+            $owner->save();
+        } finally {
+            tenancy()->end();
+        }
+
+        Tenant::query()->whereKey($tenant->id)->update([
+            'account_verification_token' => null,
+            'account_verification_token_expires_at' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Owner account approved. They can sign in without waiting for email verification.',
         ]);
     }
 

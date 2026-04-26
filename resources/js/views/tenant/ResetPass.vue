@@ -1,81 +1,100 @@
 <template>
-  <div class="mt-5 login-page d-flex align-items-center justify-content-center min-vh-100 bg-light">
-    <div class="login-card d-flex flex-row shadow overflow-hidden bg-white">
-      <!-- Left: Image -->
-      <div class="login-image d-none d-md-block">
-        <img
-          src="/Mox_files/login.jpg"
-          alt="Login Food"
-          class="img-fluid h-100 w-100"
-          style="object-fit: cover; min-width: 320px; min-height: 350px;"
-        />
-      </div>
-
-      <!-- Right: Form -->
-      <div class="login-form login-card-inner p-4 p-md-5 d-flex flex-column justify-content-center">
-        <h2 class="text-center mb-2 login-title">{{ $t('auth.reset.title') }}</h2>
-        <div class="text-center mb-3 login-subtext">{{ $t('welcomeBack') || 'Welcome!' }}</div>
-
-        <form @submit.prevent="handleResetPassword">
-          <!-- OTP field -->
-          <div class="mb-3">
-            <div class="input-group">
-              <span class="input-group-text bg-white"><i class="material-icons text-muted">key</i></span>
-              <input
-                type="text"
-                class="form-control"
-                :placeholder="$t('auth.reset.otp')"
-                v-model="otp"
-                required
-              />
+  <div class="restro-login">
+    <div class="restro-login__center">
+      <h1 class="restro-login__title">{{ $t('auth.reset.title') }}</h1>
+      <p class="restro-login__subtitle">{{ $t('auth.reset.subtitle') }}</p>
+      <form class="restro-form" @submit.prevent="handleResetPassword" novalidate>
+        <p v-if="formError" class="restro-form__msg restro-form__msg--error" role="alert">
+          {{ formError }}
+        </p>
+        <div class="restro-form__stack">
+          <div class="restro-form__field">
+            <div class="restro-form__label-row">
+              <label class="restro-form__label" for="tenant-reset-otp">{{ $t('auth.reset.otp') }}</label>
+              <RestroInfoTip :text="$t('auth.login.tipOtp')" />
             </div>
+            <input
+              id="tenant-reset-otp"
+              v-model="otp"
+              type="text"
+              class="restro-form__input"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              :placeholder="$t('auth.reset.otp')"
+              :disabled="loading"
+              required
+            />
           </div>
-
-          <!-- New password field -->
-          <div class="mb-3">
-            <div class="input-group">
-              <span class="input-group-text bg-white"><i class="material-icons text-muted">lock</i></span>
+          <div class="restro-form__field restro-form__field--pw">
+            <div class="restro-form__label-row">
+              <label class="restro-form__label" for="tenant-reset-pw1">{{ $t('auth.reset.password') }}</label>
+              <RestroInfoTip :text="$t('auth.login.tipPassword')" />
+            </div>
+            <div class="restro-form__pw-inner">
               <input
-                :type="showPassword ? 'text' :'password'"
-                class="form-control"
-                :placeholder="$t('auth.reset.password')"
+                id="tenant-reset-pw1"
                 v-model="newPassword"
+                :type="showPassword ? 'text' : 'password'"
+                class="restro-form__input restro-form__input--with-toggle"
+                autocomplete="new-password"
+                :placeholder="$t('auth.reset.password')"
+                :disabled="loading"
                 required
               />
-              <span
-                class="input-group-text bg-white"
-                style="cursor:pointer;"
+              <button
+                type="button"
+                class="restro-form__pw-toggle"
+                :aria-pressed="showPassword"
+                :aria-label="showPassword ? $t('auth.login.hidePassword') : $t('auth.login.showPassword')"
                 @click="showPassword = !showPassword"
               >
-                <i class="material-icons text-muted">{{ showPassword ? 'visibility_off' : 'visibility' }}</i>
-              </span>
+                <i
+                  class="restro-form__pw-icon"
+                  :class="showPassword ? 'far fa-eye-slash' : 'far fa-eye'"
+                  aria-hidden="true"
+                />
+              </button>
             </div>
           </div>
-
-          <!-- Confirm password field -->
-          <div class="mb-3">
-            <div class="input-group">
-              <span class="input-group-text bg-white"><i class="material-icons text-muted">lock</i></span>
+          <div class="restro-form__field restro-form__field--pw">
+            <div class="restro-form__label-row">
+              <label class="restro-form__label" for="tenant-reset-pw2">{{
+                $t('auth.reset.confirmPassword')
+              }}</label>
+              <RestroInfoTip :text="$t('auth.login.tipPassword')" />
+            </div>
+            <div class="restro-form__pw-inner">
               <input
-                :type="showPassword ? 'text' : 'password'"
-                class="form-control"
-                :placeholder="$t('auth.reset.confirmPassword')"
+                id="tenant-reset-pw2"
                 v-model="newPasswordConfirm"
+                :type="showPassword2 ? 'text' : 'password'"
+                class="restro-form__input restro-form__input--with-toggle"
+                autocomplete="new-password"
+                :placeholder="$t('auth.reset.confirmPassword')"
+                :disabled="loading"
                 required
               />
+              <button
+                type="button"
+                class="restro-form__pw-toggle"
+                :aria-pressed="showPassword2"
+                :aria-label="showPassword2 ? $t('auth.login.hidePassword') : $t('auth.login.showPassword')"
+                @click="showPassword2 = !showPassword2"
+              >
+                <i
+                  class="restro-form__pw-icon"
+                  :class="showPassword2 ? 'far fa-eye-slash' : 'far fa-eye'"
+                  aria-hidden="true"
+                />
+              </button>
             </div>
           </div>
-
-          <!-- Submit button -->
-          <button
-            type="submit"
-            class="btn btn-success w-100 fw-bold mb-3 login-btn"
-            :disabled="loading"
-          >
-            {{ loading ? 'Processing...' : $t('auth.reset.submit') }}
+          <button class="restro-form__submit" type="submit" :disabled="loading">
+            {{ loading ? '…' : $t('auth.reset.submit') }}
           </button>
-        </form>
-      </div>
+          <router-link class="restro-form__link" to="/login">{{ $t('auth.forgot.backToSignIn') }}</router-link>
+        </div>
+      </form>
     </div>
   </div>
 </template>
@@ -85,38 +104,42 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import Swal from 'sweetalert2'
+import RestroInfoTip from '../../components/frontend/RestroInfoTip.vue'
 
 const newPassword = ref('')
 const newPasswordConfirm = ref('')
 const otp = ref('')
 const showPassword = ref(false)
+const showPassword2 = ref(false)
 const router = useRouter()
 const loading = ref(false)
-const error = ref('')
+const formError = ref('')
 
 async function handleResetPassword() {
-  error.value = ''
+  formError.value = ''
   loading.value = true
   try {
     const response = await axios.post('/tenant/reset-password', {
       password: newPassword.value,
       password_confirmation: newPasswordConfirm.value,
-      otp: otp.value,
+      otp: otp.value
     })
 
-    // CASE 1: OTP verification still required
     if (response.data.status === 'verify_required') {
+      const email = localStorage.getItem('password_reset_email')
+      if (email) {
+        localStorage.setItem('pending_verification_email', email)
+      }
       await Swal.fire({
         icon: 'info',
-        title: 'Email Verification Required',
-        text: 'We have sent an OTP to your email. Please verify to continue.',
-        confirmButtonColor: '#3085d6'
+        title: 'Email verification',
+        text: 'Please verify your account with the code we sent, then try signing in again.',
+        confirmButtonColor: '#00844d'
       })
-      router.push('/verify-otp')
+      await router.push({ path: '/login', query: { verify: '1' } })
       return
     }
 
-    // CASE 2: Reset successful
     const token = response.data.token
     localStorage.setItem('token', token)
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
@@ -133,11 +156,11 @@ async function handleResetPassword() {
 
     router.push('/dashboard/home')
   } catch (err) {
-    error.value = err.response?.data?.message || 'Reset password failed. Please check your input.'
+    formError.value = err.response?.data?.message || 'Reset password failed. Please check your input.'
     Swal.fire({
       icon: 'error',
       title: 'Reset Password Failed',
-      text: error.value,
+      text: formError.value,
       confirmButtonColor: '#dc3545'
     })
   } finally {
@@ -147,198 +170,181 @@ async function handleResetPassword() {
 </script>
 
 <style scoped>
-/* your existing styles remain unchanged */
-.login-page {
-  background: #f8f9fa;
-}
-.login-card {
-  min-width: 1000px;
-  max-width: 900px;
-  min-height: 350px;
-  background: #fff;
-}
-.login-image {
-  width: 500px;
-  min-height: 350px;
-  background: #eee;
-}
-.login-form {
-  flex: 1 1 0%;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  min-width: 500px;
-  max-width: 500px;
+.restro-login {
+  width: 100%;
+  flex: 1 1 auto;
+  display: flex;
   align-items: center;
-}
-.input-group-text {
-  background: #fff;
-  border-right: 0;
-  border-radius: 6px 0 0 6px;
-}
-.form-control {
-  border-left: 0;
-  border-radius: 0 6px 6px 0;
-  box-shadow: none;
-}
-.btn-success {
-  background: #388e3c;
-  border: none;
-}
-.btn-success:hover {
-  background: #2e7031;
-  border: none;
-}
-.btn-light {
-  background: #fff;
-  border: 1px solid #eee;
-}
-.btn-light:hover {
-  background: #f5f5f5;
-}
-@media (max-width: 991.98px) {
-  .login-card {
-    flex-direction: column;
-    min-width: 320px;
-    max-width: 95vw;
-  }
-  .login-image {
-    width: 100%;
-    min-height: 180px;
-    max-height: 220px;
-  }
-  .login-form {
-    min-width: 100%;
-    max-width: 100%;
-  }
-  .login-card-inner {
-    min-width: 100%;
-    max-width: 100%;
-  }
+  justify-content: center;
+  min-height: 0;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-@media (max-width: 767.98px) {
-  .login-page {
-    padding: 1rem;
-  }
-  .login-card {
-    min-width: 100%;
-    max-width: 100%;
-    border-radius: 12px;
-  }
-  .login-title {
-    font-size: 1.75rem;
-  }
-  .login-subtext {
-    font-size: 0.95rem;
-  }
-  .login-form {
-    padding: 1.5rem !important;
-  }
+.restro-login__center {
+  width: 100%;
+  max-width: 32rem;
 }
 
-/* Android-specific fixes */
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-  .login-page,
-  .login-card {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    -webkit-font-smoothing: antialiased;
-  }
-
-  input {
-    -webkit-appearance: none;
-    -webkit-border-radius: 4px;
-    border-radius: 4px;
-    font-size: 16px; /* Prevents zoom on Android */
-  }
-
-  button, .btn {
-    -webkit-tap-highlight-color: rgba(67, 160, 71, 0.2);
-    touch-action: manipulation;
-  }
+.restro-login__title {
+  font-size: 1.28rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0 0 0.5rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  text-align: center;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-@media (max-width: 575.98px) {
-  .login-page {
-    padding: 0.5rem;
-  }
-  .login-card {
-    border-radius: 8px;
-  }
-  .login-title {
-    font-size: 1.5rem;
-  }
-  .login-subtext {
-    font-size: 0.9rem;
-  }
-  .login-form {
-    padding: 1rem !important;
-  }
-  .login-btn {
-    font-size: 1rem;
-  }
+.restro-login__subtitle {
+  margin: 0 0 1.35rem;
+  font-size: 0.9rem;
+  color: #5e5e5e;
+  line-height: 1.45;
+  text-align: center;
 }
-/* Login Card Inner Styling */
-.login-card-inner {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-  min-width: 500px;
-  max-width: 500px;
-  margin: 0 auto;
+</style>
+
+<style>
+.restro-login .restro-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
 }
-.login-title {
-  font-family: 'Playfair Display', serif;
-  font-weight: bold;
-  color: #222;
-  font-size: 2rem;
+.restro-login .restro-form__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
 }
-.login-subtext {
-  color: #388e3c;
-  font-size: 1rem;
+.restro-login .restro-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
 }
-.login-link {
-  color: #388e3c;
-  text-decoration: none;
-  font-weight: 500;
+.restro-login .restro-form__label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
-.login-link:hover {
-  text-decoration: underline;
-}
-.login-btn {
-  background: #43a047;
-  border-color: #43a047;
-  border-radius: 4px;
+.restro-login .restro-form__label {
+  font-size: 0.875rem;
   font-weight: 600;
-  font-size: 1.05rem;
+  color: #333;
+  margin: 0;
 }
-.login-btn:hover {
-  background: #388e3c;
-  border-color: #388e3c;
-}
-.login-or {
-  color: #888;
-  font-size: 0.97rem;
-}
-.login-social {
+.restro-login .restro-form__input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #d0d0d0;
+  border-radius: 10px;
+  padding: 0.68rem 0.9rem;
+  font-size: 1rem;
   background: #fff;
-  border: 1px solid #eee;
-  transition: box-shadow 0.2s;
+  color: #111;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
-.login-social:hover {
-  box-shadow: 0 2px 8px rgba(67,160,71,0.12);
+.restro-login .restro-form__input::placeholder {
+  color: #9a9a9a;
+  opacity: 1;
+  font-size: 0.95rem;
 }
-.login-reset {
-  color: #444;
-  font-size: 0.97rem;
+.restro-login .restro-form__input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #00844d 25%, #fff);
+  border-color: #00844d;
+}
+.restro-login .restro-form__field--pw {
+  position: relative;
+}
+.restro-login .restro-form__pw-inner {
+  position: relative;
+  display: block;
+}
+.restro-login .restro-form__pw-toggle {
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: color-mix(in srgb, #00844d 6%, #fff);
+  color: #00844d;
+  cursor: pointer;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+.restro-login .restro-form__pw-toggle:hover {
+  background: color-mix(in srgb, #00844d 12%, #fff);
+  color: #006a3e;
+}
+.restro-login .restro-form__pw-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px color-mix(in srgb, #00844d 40%, #fff);
+}
+.restro-login .restro-form__pw-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.restro-login .restro-form__input--with-toggle {
+  padding-right: 3.25rem;
+}
+.restro-login .restro-form__msg {
+  margin: 0 0 0.5rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+}
+.restro-login .restro-form__msg--error {
+  color: #6e1414;
+  background: #fff0f0;
+  border: 1px solid #e8b4b4;
+}
+.restro-login .restro-form__submit {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  background: #00844d;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.88rem 1.15rem;
+  cursor: pointer;
+  margin-top: 0.25rem;
+  transition: filter 0.15s, opacity 0.15s;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+.restro-login .restro-form__submit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #00844d;
+}
+.restro-login .restro-form__submit:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+.restro-login .restro-form__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.restro-login .restro-form__link {
+  color: #00844d;
+  font-weight: 600;
   text-decoration: none;
-  transition: color 0.2s;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-top: 0.15rem;
 }
-.login-reset:hover {
-  color: #43a047;
+.restro-login .restro-form__link:hover {
   text-decoration: underline;
 }
 </style>

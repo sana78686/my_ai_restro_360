@@ -61,6 +61,9 @@
                                     {{ $t("tenants.list.status") }}
                                 </th>
                                 <th class="d-none d-md-table-cell">
+                                    {{ $t("tenants.list.ownerLogin") }}
+                                </th>
+                                <th class="d-none d-md-table-cell">
                                     {{ $t("common.actions") }}
                                 </th>
                             </tr>
@@ -224,6 +227,22 @@
                                     </span>
                                 </td>
                                 <td class="d-none d-md-table-cell">
+                                    <span
+                                        v-if="tenant.owner_account_approved"
+                                        class="badge bg-success"
+                                        >{{ $t("tenants.list.ownerApproved") }}</span
+                                    >
+                                    <button
+                                        v-else
+                                        type="button"
+                                        class="btn btn-sm btn-outline-success"
+                                        :disabled="loading"
+                                        @click="approveOwnerAccount(tenant)"
+                                    >
+                                        {{ $t("tenants.list.approveOwner") }}
+                                    </button>
+                                </td>
+                                <td class="d-none d-md-table-cell">
                                     <select
                                         class="form-select form-select-sm"
                                         :disabled="loading"
@@ -334,24 +353,27 @@ export default {
             }
         };
 
-        const approveTenant = async (tenant) => {
+        const approveOwnerAccount = async (tenant) => {
             try {
                 loading.value = true;
-                await axios.post(`/dashboard/tenants/${tenant.id}/approve`);
+                await axios.post(
+                    `/dashboard/tenants/${tenant.id}/approve-account`
+                );
                 await fetchTenants();
                 Swal.fire({
                     icon: "success",
                     title: "Success",
-                    text: "Restaurant approved successfully",
+                    text:
+                        "Owner account approved. They can sign in without email OTP.",
                 });
             } catch (error) {
-                console.error("Error approving tenant:", error);
+                console.error("Error approving owner:", error);
                 Swal.fire({
                     icon: "error",
                     title: "Error",
                     text:
                         error.response?.data?.message ||
-                        "Failed to approve restaurant",
+                        "Failed to approve owner account",
                 });
             } finally {
                 loading.value = false;
@@ -459,7 +481,7 @@ export default {
             statusFilter,
             loading,
             filteredTenants,
-            approveTenant,
+            approveOwnerAccount,
             suspendTenant,
             activateTenant,
             changeTenantStatus,

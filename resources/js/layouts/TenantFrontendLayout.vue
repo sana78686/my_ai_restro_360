@@ -1,5 +1,21 @@
 <template>
-    <div class="frontend-layout">
+    <div class="frontend-layout" :class="{ 'frontend-layout--minimal-auth': isMinimalAuth }">
+        <template v-if="isMinimalAuth">
+            <header class="restro-header">
+                <div class="restro-header__inner">
+                    <router-link class="restro-header__brand" to="/">
+                        <img :src="settings?.logo || defaultLogo" alt="AiRestro360" class="restro-header__logo" />
+                    </router-link>
+                    <div class="restro-header__actions">
+                        <LanguageSwitcher class="restro-header__lang" />
+                    </div>
+                </div>
+            </header>
+            <main class="restro-solo-main">
+                <router-view :key="$route.fullPath" />
+            </main>
+        </template>
+        <template v-else>
         <div v-if="settings.discount && Number(settings.discount) > 0 && showDiscountBanner" class="discount-banner">
             <span>
                 🔥 {{ $t('Special-Offer') }} : <b>{{ settings.discount }}% OFF</b> {{
@@ -353,6 +369,7 @@
                 </div>
             </div>
         </transition>
+        </template>
     </div>
 </template>
 
@@ -368,6 +385,10 @@ import { useCart } from '../composables/useCart'
 // Get the current route and router
 const route = useRoute()
 const router = useRouter()
+
+/** Auth screens: header + form only */
+const TENANT_AUTH_ROUTE_NAMES = new Set(['tenant-login', 'forgot-password', 'reset-password'])
+const isMinimalAuth = computed(() => TENANT_AUTH_ROUTE_NAMES.has(route.name))
 
 // Watch for route changes and scroll to top
 watch(
@@ -1569,5 +1590,71 @@ body {
     to {
         transform: translateY(0);
     }
+}
+
+/* —— Minimal auth (tenant login): same strip as marketing home — logo + language only — */
+.frontend-layout--minimal-auth {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+}
+
+.restro-solo-main {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.25rem 1.25rem 2rem;
+    box-sizing: border-box;
+}
+
+.restro-header {
+    position: sticky;
+    top: 0;
+    z-index: 1050;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+.restro-header__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.9rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.restro-header__brand {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.restro-header__logo {
+    height: 72px;
+    width: auto;
+    display: block;
+    image-rendering: -webkit-optimize-contrast;
+}
+
+.restro-header__actions {
+    display: flex;
+    align-items: center;
+}
+
+.restro-header :deep(.language-btn) {
+    color: #1a1a1a !important;
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+}
+
+.restro-header :deep(.language-btn):hover {
+    border-color: #00844d !important;
 }
 </style>
