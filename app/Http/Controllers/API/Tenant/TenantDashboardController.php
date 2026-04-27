@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Tenant;
+namespace App\Http\Controllers\API\Tenant;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -24,16 +24,21 @@ class TenantDashboardController extends Controller
     
     public function getNotifications(Request $request)
     {
-        $userId = $request->user()->id;
-        $notifications = Notification::orderBy('created_at', 'desc')
-            // ->where('user_id', $userId)
-            ->get();
-        Log::info('notifications: ' , [$notifications]);
-        // dd($notifications);
-        return response()->json([
-            'success' => true,
-            'data' => $notifications
-        ]);
+        try {
+            $notifications = Notification::orderBy('created_at', 'desc')->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $notifications,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('getNotifications: '.$e->getMessage());
+
+            return response()->json([
+                'success' => true,
+                'data' => [],
+            ]);
+        }
     }
 
     public function markNotificationRead(Request $request, $id)

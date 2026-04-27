@@ -1265,6 +1265,7 @@ import { ref, onMounted, computed, watch, nextTick } from "vue";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { Tooltip } from "bootstrap";
+import { getGoogleMapsApiKey } from "../../utils/googleMapsPlacesLoader.js";
 
 export default {
     name: "Settings",
@@ -1559,9 +1560,17 @@ export default {
                 return Promise.resolve();
             }
 
+            const key = getGoogleMapsApiKey();
+            if (!key) {
+                console.warn(
+                    "[AiRestro360] Delivery map skipped: set VITE_GOOGLE_MAPS_API_KEY in .env and restart Vite."
+                );
+                return Promise.resolve();
+            }
+
             return new Promise((resolve, reject) => {
                 const script = document.createElement("script");
-                script.src = `https://maps.google.com/maps/api/js?key=AIzaSyCZDgTTb7vm0co-2yHGinkgSs_yDTNtbSo&libraries=places`;
+                script.src = `https://maps.google.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places`;
                 script.async = true;
                 script.defer = true;
                 script.onload = resolve;

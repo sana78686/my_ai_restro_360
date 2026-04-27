@@ -20,11 +20,14 @@ class NewTenantNotification extends Mailable
 
     public function build()
     {
+        $base = rtrim(config('app.url', url('/')), '/');
+
         return $this->markdown('emails.new-tenant-notification')
-                    ->subject('New Restaurant Registration')
-                    ->with([
-                        'tenant' => $this->tenant,
-                        'loginUrl' => config('app.url') . '/login'
-                    ]);
+            ->subject('Action required: New restaurant registration — '.$this->tenant->business_name)
+            ->with([
+                'tenant' => $this->tenant,
+                'reviewUrl' => $base.'/dashboard/tenants',
+                'loginUrl' => $base.'/login',
+            ]);
     }
 }

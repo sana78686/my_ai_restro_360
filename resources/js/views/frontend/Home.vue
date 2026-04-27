@@ -81,17 +81,28 @@
                     <RestroInfoTip :text="tip('tipPassword')" />
                   </div>
                   <p v-if="passwordFirstHint" class="restro-pw-suggest" role="status">{{ passwordFirstHint }}</p>
-                  <input
-                    id="restro-pw"
-                    v-model="form.password"
-                    class="restro-form__input"
-                    type="password"
-                    autocomplete="new-password"
-                    :placeholder="$t('home.landing.phPassword')"
-                    :title="$t('home.landing.phPassword')"
-                    :required="true"
-                    :aria-invalid="!passwordIsValid && form.password.length > 0"
-                  />
+                  <div class="restro-form__pw-field">
+                    <input
+                      id="restro-pw"
+                      v-model="form.password"
+                      class="restro-form__input restro-form__input--pw"
+                      :type="showPassword ? 'text' : 'password'"
+                      autocomplete="new-password"
+                      :placeholder="$t('home.landing.phPassword')"
+                      :title="$t('home.landing.phPassword')"
+                      :required="true"
+                      :aria-invalid="!passwordIsValid && form.password.length > 0"
+                    />
+                    <button
+                      type="button"
+                      class="restro-form__pw-toggle"
+                      tabindex="-1"
+                      :aria-label="showPassword ? $t('home.landing.hidePassword') : $t('home.landing.showPassword')"
+                      @click.prevent="showPassword = !showPassword"
+                    >
+                      <i class="fas" :class="showPassword ? 'fa-eye-slash' : 'fa-eye'" aria-hidden="true" />
+                    </button>
+                  </div>
                 </div>
               </div>
               <div class="restro-form__row restro-form__row--2">
@@ -206,7 +217,7 @@
 
               <div class="restro-form__field">
                 <div class="restro-form__legend-row">
-                  <p class="restro-form__legend restro-form__legend--inline">{{ $t('home.landing.products') }}<span class="restro-form__req" aria-hidden="true">*</span></p>
+                  <p class="restro-form__legend restro-form__legend--inline">{{ $t('home.landing.products') }}</p>
                   <RestroInfoTip :text="tip('tipProducts')" />
                 </div>
                 <div
@@ -215,16 +226,22 @@
                   role="group"
                   :aria-label="$t('home.landing.products')"
                 >
-                  <button
+                  <label
                     v-for="k in prodKeys"
                     :key="k"
-                    type="button"
-                    class="restro-pill"
-                    :class="{ 'restro-pill--active': form.products.includes(k) }"
-                    @click="toggleProd(k)"
+                    class="restro-pill-label"
                   >
-                    {{ $t('home.landing.prod.' + k) }}
-                  </button>
+                    <input
+                      v-model="form.products"
+                      class="restro-pill-checkbox"
+                      type="checkbox"
+                      :value="k"
+                    />
+                    <span
+                      class="restro-pill"
+                      :class="{ 'restro-pill--active': form.products.includes(k) }"
+                    >{{ $t('home.landing.prod.' + k) }}</span>
+                  </label>
                 </div>
               </div>
 
@@ -244,24 +261,26 @@
 
               <div class="restro-form__checks">
                 <label class="restro-form__check">
-                  <input v-model="form.marketingOk" class="restro-form__checkbox" type="checkbox" />
+                  <input v-model="form.marketingOk" class="restro-form__checkbox restro-form__checkbox--box" type="checkbox" />
                   <span class="restro-form__check-text">{{ $t('home.landing.marketing') }}</span>
                 </label>
-                <label class="restro-form__check">
+                <label class="restro-form__check restro-form__check--terms">
                   <input
                     id="restro-cb-privacy"
                     v-model="form.privacyOk"
-                    class="restro-form__checkbox"
+                    class="restro-form__checkbox restro-form__checkbox--box"
                     type="checkbox"
                     required
                   />
                   <span class="restro-form__check-text">
+                    <span class="restro-form__req" aria-hidden="true">*</span>
                     {{ $t('home.landing.privacy') }}
                     <a
                       href="https://airestro360.com/legal/terms"
                       class="restro-form__link"
                       target="_blank"
                       rel="noopener noreferrer"
+                      @click.stop
                     >{{ $t('home.landing.termsLink') }}</a>
                     {{ $t('home.landing.privacyAnd') }}
                     <a
@@ -269,6 +288,7 @@
                       class="restro-form__link"
                       target="_blank"
                       rel="noopener noreferrer"
+                      @click.stop
                     >{{ $t('home.landing.privacyLink') }}</a>.
                   </span>
                 </label>
@@ -339,6 +359,7 @@ const RestroPhoneField = defineAsyncComponent(() => import('../../components/fro
 const RestroInfoTip = defineAsyncComponent(() => import('../../components/frontend/RestroInfoTip.vue'))
 
 const { t, tm } = useI18n()
+const showPassword = ref(false)
 const submitting = ref(false)
 const isBuilding = ref(false)
 const showPostRegisterPending = ref(false)
@@ -362,16 +383,6 @@ function focusById (id) {
   nextTick(() => {
     const el = document.getElementById(id)
     scrollIntoFormAndFocus(el)
-  })
-}
-
-function focusFirstProductPill () {
-  nextTick(() => {
-    const g = document.getElementById('restro-pills-products')
-    const btn = g?.querySelector('button.restro-pill')
-    if (btn) {
-      scrollIntoFormAndFocus(btn)
-    }
   })
 }
 
@@ -653,10 +664,10 @@ const partnerNames = computed(() => [
   t('home.landing.brandC')
 ])
 
-function toggleProd(k) {
-  const i = form.products.indexOf(k)
-  if (i === -1) form.products.push(k)
-  else form.products.splice(i, 1)
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function focusRegistrationServerError () {
+  focusById('restro-fn')
 }
 
 async function onSubmit () {
@@ -675,6 +686,10 @@ async function onSubmit () {
     focusById('restro-em')
     return
   }
+  if (!EMAIL_RE.test(form.email.trim())) {
+    focusById('restro-em')
+    return
+  }
   if (!passwordIsValid.value) {
     focusById('restro-pw')
     return
@@ -687,16 +702,21 @@ async function onSubmit () {
     focusById('restro-rn')
     return
   }
+  const phoneDigits = String(form.phone || '').replace(/\D/g, '')
+  if (phoneDigits.length < 6) {
+    focusById('restro-phone-local')
+    return
+  }
   if (!form.country) {
     focusById('restro-country-card-btn')
     return
   }
-  if (!form.hearAbout) {
-    focusById('restro-hear')
+  if (!form.locations) {
+    focusById('restro-lead-anch')
     return
   }
-  if (form.products.length === 0) {
-    focusFirstProductPill()
+  if (!form.hearAbout) {
+    focusById('restro-hear')
     return
   }
   if (!form.privacyOk) {
@@ -704,6 +724,7 @@ async function onSubmit () {
     return
   }
 
+  submitting.value = true
   try {
     isBuilding.value = true
     const submitData = {
@@ -744,7 +765,7 @@ async function onSubmit () {
     } else {
       submitInfo.value = ''
       submitError.value = data.message || t('home.landing.registerFailed')
-      focusById('restro-em')
+      focusRegistrationServerError()
     }
   } catch (e) {
     isBuilding.value = false
@@ -759,16 +780,14 @@ async function onSubmit () {
             .flat()
             .filter(Boolean)[0] || msg || t('home.landing.registerFailed')
         )
-        focusById('restro-em')
+        focusRegistrationServerError()
       }
     } else {
       submitError.value = String(msg || t('home.landing.registerFailed'))
-      focusById('restro-em')
+      focusRegistrationServerError()
     }
   } finally {
-    if (!isBuilding.value) {
-      submitting.value = false
-    }
+    submitting.value = false
   }
 }
 </script>
@@ -1140,27 +1159,96 @@ async function onSubmit () {
   gap: 0.5rem;
 }
 
+.restro-pill-label {
+  position: relative;
+  display: inline-flex;
+  margin: 0;
+  cursor: pointer;
+  vertical-align: top;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.restro-pill-checkbox {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.restro-pill-label:focus-within .restro-pill {
+  outline: none;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #00844d;
+}
+
 .restro-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--restro-border);
   background: #fff;
-  color: #333;
+  color: #222;
   border-radius: 999px;
   padding: 0.4rem 0.75rem;
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   line-height: 1.2;
+  min-height: 2rem;
+  box-sizing: border-box;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .restro-pill:hover {
   border-color: #999;
+  color: #111;
 }
 
 .restro-pill--active {
-  background: var(--restro-accent);
+  background: #00844d;
   color: #fff;
-  border-color: var(--restro-accent);
+  border-color: #00844d;
+}
+
+.restro-pill--active:hover {
+  color: #fff;
+  border-color: #006a3e;
+  background: #006a3e;
+}
+
+.restro-form__pw-field {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.restro-form__input--pw {
+  padding-right: 2.5rem;
+}
+
+.restro-form__pw-toggle {
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: #666;
+  padding: 0.35rem;
+  cursor: pointer;
+  line-height: 1;
+  border-radius: 6px;
+}
+
+.restro-form__pw-toggle:hover {
+  color: var(--restro-accent);
+  background: rgba(0, 132, 77, 0.08);
 }
 
 .restro-form__checks {
@@ -1186,6 +1274,24 @@ async function onSubmit () {
   width: 1rem;
   height: 1rem;
   accent-color: var(--restro-accent);
+}
+
+.restro-form__checkbox--box {
+  appearance: auto;
+  -webkit-appearance: checkbox;
+  width: 1.125rem;
+  height: 1.125rem;
+  min-width: 1.125rem;
+  min-height: 1.125rem;
+  margin-top: 0.12rem;
+  opacity: 1;
+  cursor: pointer;
+  border: 1px solid #6e6e6e;
+  border-radius: 4px;
+}
+
+.restro-form__check--terms .restro-form__check-text .restro-form__req {
+  margin-right: 0.2rem;
 }
 
 .restro-form__link {

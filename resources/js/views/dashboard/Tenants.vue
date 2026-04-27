@@ -27,6 +27,9 @@
                             <option value="">
                                 {{ $t("tenants.filters.allStatus") }}
                             </option>
+                            <option value="pending">
+                                {{ $t("tenants.status.pending") }}
+                            </option>
                             <option value="trial">
                                 {{ $t("tenants.status.trial") }}
                             </option>
@@ -156,6 +159,13 @@
                                                             )
                                                         "
                                                     >
+                                                        <option value="pending">
+                                                            {{
+                                                                $t(
+                                                                    "tenants.status.pending"
+                                                                )
+                                                            }}
+                                                        </option>
                                                         <option value="trial">
                                                             {{
                                                                 $t(
@@ -254,6 +264,11 @@
                                             )
                                         "
                                     >
+                                        <option value="pending">
+                                            {{
+                                                $t("tenants.status.pending")
+                                            }}
+                                        </option>
                                         <option value="trial">
                                             {{ $t("tenants.status.trial") }}
                                         </option>

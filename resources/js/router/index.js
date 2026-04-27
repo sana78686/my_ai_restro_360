@@ -65,6 +65,12 @@ const routes = [
         meta: { title: 'Register' },
       },
       {
+        path: 'login/2',
+        name: 'login-password',
+        component: () => import('../views/auth/Login.vue'),
+        meta: { title: 'Login' },
+      },
+      {
         path: 'login',
         name: 'login',
         component: () => import('../views/auth/Login.vue'),

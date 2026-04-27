@@ -733,6 +733,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { Tooltip } from "bootstrap";
 import { useCart } from "../../composables/useCart";
+import { getGoogleMapsApiKey } from "../../utils/googleMapsPlacesLoader.js";
 import L from "leaflet";
 import 'leaflet/dist/leaflet.css';
 
@@ -805,13 +806,21 @@ export default {
                 return;
             }
 
+            const key = getGoogleMapsApiKey();
+            if (!key) {
+                console.warn(
+                    "[AiRestro360] Add VITE_GOOGLE_MAPS_API_KEY to .env (Google Cloud → Maps JavaScript API + Places API), then restart Vite."
+                );
+                return;
+            }
+
             const existingScript = document.querySelector('script[src*="maps.google.com/maps/api/js"]');
             if (existingScript) {
                 existingScript.remove();
             }
 
             const script = document.createElement('script');
-            script.src = `https://maps.google.com/maps/api/js?key=AIzaSyCZDgTTb7vm0co-2yHGinkgSs_yDTNtbSo&libraries=places&callback=initGoogleMaps`;
+            script.src = `https://maps.google.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&callback=initGoogleMaps`;
             script.async = true;
             script.defer = true;
 

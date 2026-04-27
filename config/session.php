@@ -73,7 +73,10 @@ return [
     |
     */
 
-    'connection' => env('SESSION_CONNECTION'),
+    // Always use the central app DB for sessions. If null, the active DB connection
+    // becomes the tenant DB after InitializeTenancyByDomain, which breaks when the
+    // tenant database file/schema is missing (Unknown database / connection errors).
+    'connection' => env('SESSION_CONNECTION', 'mysql'),
 
     /*
     |--------------------------------------------------------------------------

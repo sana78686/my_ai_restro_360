@@ -19,6 +19,64 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    /**
+     * Unified entry: detect super admin (central users) vs tenant owner by email.
+     */
+    public function loginLookup(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $email = strtolower(trim($request->string('email')->toString()));
+
+        $superUser = User::query()
+            ->whereRaw('LOWER(email) = ?', [$email])
+            ->first();
+
+        if ($superUser && $superUser->hasRole('super_user')) {
+            return response()->json([
+                'account_type' => 'super_admin',
+                'email' => $superUser->email,
+            ]);
+        }
+
+        $tenant = Tenant::query()
+            ->whereRaw('LOWER(owner_email) = ?', [$email])
+            ->first(['id', 'business_name', 'subdomain', 'owner_email']);
+
+        if ($tenant) {
+            return response()->json([
+                'account_type' => 'tenant',
+                'email' => $tenant->owner_email,
+                'login_url' => $this->buildTenantLoginUrl($tenant),
+                'subdomain' => $tenant->subdomain,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No account found for this email.',
+        ], 404);
+    }
+
+    protected function buildTenantLoginUrl(Tenant $tenant): string
+    {
+        $sub = (string) ($tenant->subdomain ?: $tenant->id);
+        $main = (string) config('app.main_domain', 'localhost:8000');
+        if (str_contains($main, ':')) {
+            [$host, $port] = explode(':', $main, 2);
+        } else {
+            $host = $main;
+            $port = null;
+        }
+        $scheme = request()->getScheme();
+        $tenantHost = $sub.'.'.$host;
+        $portSuffix = $port ? ':'.$port : '';
+
+        return $scheme.'://'.$tenantHost.$portSuffix.'/login';
+    }
+
     public function checkSubdomain($subdomain)
     {
         $tenant = \App\Models\Tenant::where('domain', $subdomain)->first();

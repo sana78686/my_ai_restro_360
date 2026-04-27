@@ -135,17 +135,19 @@
     <div class="email-container">
         <!-- Header -->
         <div class="header">
-            <h1>🎉 Welcome to {{ config('app.name', 'AiRestro360') }}!</h1>
-            <p>Your Restaurant Management System is Ready</p>
+            <h1>Thanks for registering with {{ config('app.name', 'AiRestro360') }}</h1>
+            <p>Your request is being reviewed</p>
         </div>
 
         <!-- Content -->
         <div class="content">
-            <div class="welcome-badge">✅ Account Successfully Created</div>
+            <div class="welcome-badge">✅ We’ve received your registration</div>
 
             <h2 style="color: #333; margin-top: 0;">Hello {{ $user->name ?? 'there' }} 👋</h2>
 
-            <p>We’re thrilled to have you on board! Your restaurant account has been successfully created and activated. You can now start managing your restaurant, menu, and staff — all in one place.</p>
+            <p>Your restaurant account has been <strong>created</strong>, but it is <strong>not active yet</strong>. Our team (or your platform administrator) must <strong>approve</strong> your registration before you can sign in and use your full dashboard.</p>
+
+            <p>You’ll get another email when your account has been approved. If you have questions, reply to our support contact below.</p>
 
             @if($tenant ?? false)
             <div class="highlight">
@@ -154,35 +156,15 @@
             </div>
             @endif
 
-            <h3 style="color: #43a047; margin-top: 30px;">Here’s What You Can Do:</h3>
-
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🍽️</div>
-                    <div class="feature-title">Menu Management</div>
-                    <div class="feature-desc">Create and organize menu items, categories, and pricing with ease.</div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <div class="feature-title">Order Tracking</div>
-                    <div class="feature-desc">Monitor customer orders and update statuses in real-time.</div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">👥</div>
-                    <div class="feature-title">Staff Access</div>
-                    <div class="feature-desc">Add team members and assign roles securely.</div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📈</div>
-                    <div class="feature-title">Reports & Analytics</div>
-                    <div class="feature-desc">Get real insights on sales, orders, and performance.</div>
-                </div>
+            <div class="highlight">
+                <strong>What happens next?</strong><br>
+                After approval, you’ll be able to sign in at your restaurant URL and finish setup (menu, staff, orders, and more).
             </div>
 
             <div class="cta-section">
-                <h3>Ready to Get Started?</h3>
-                <p>Access your restaurant dashboard now and start setting up your system.</p>
-                <a href="{{ $loginUrl ?? (config('app.url') . '/login') }}" class="cta-button">🚀 Go to Dashboard</a>
+                <h3>Your login link (after approval)</h3>
+                <p>You can bookmark this page for when your account is active.</p>
+                <a href="{{ $loginUrl ?? (config('app.url') . '/login') }}" class="cta-button">Restaurant sign-in</a>
             </div>
 
             <div class="divider"></div>

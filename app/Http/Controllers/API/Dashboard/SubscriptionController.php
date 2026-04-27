@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use Stancl\Tenancy\Facades\Tenancy;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Stripe\Stripe;
 use Stripe\Customer;
 use App\Models\Central\Plan as CentralPlan;
@@ -142,28 +143,43 @@ class SubscriptionController extends Controller
 
  public function show()
     {
-        // Get current tenant ID
-        $tenantId = tenancy()->tenant->id;
+        try {
+            $tenant = tenant();
+            if (! $tenant) {
+                return response()->json([
+                    'message' => 'No tenant context.',
+                    'plan' => null,
+                ]);
+            }
 
-        // Fetch subscription from CENTRAL DB
-        $subscription = Subscription::with('plan')
-            ->where('tenant_id', $tenantId)
-            ->latest()
-            ->first();
+            $tenantId = $tenant->id;
 
-        if (!$subscription) {
+            $subscription = Subscription::with('plan')
+                ->where('tenant_id', $tenantId)
+                ->latest()
+                ->first();
+
+            if (! $subscription) {
+                return response()->json([
+                    'message' => 'No active subscription found.',
+                    'plan' => null,
+                ]);
+            }
+
             return response()->json([
-                'message' => 'No active subscription found.',
+                'plan_name' => $subscription->plan?->name,
+                'status' => $subscription->status,
+                'starts_at' => $subscription->starts_at,
+                'ends_at' => $subscription->ends_at,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('tenant my-subscription failed: '.$e->getMessage());
+
+            return response()->json([
+                'message' => 'Unable to load subscription.',
                 'plan' => null,
             ]);
         }
-
-        return response()->json([
-            'plan_name' => $subscription->plan->name,
-            'status' => $subscription->status,
-            'starts_at' => $subscription->starts_at,
-            'ends_at' => $subscription->ends_at,
-        ]);
     }
 
     /**

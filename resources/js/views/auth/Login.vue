@@ -1,30 +1,65 @@
 <template>
   <div class="restro-login">
     <div class="restro-login__center">
-      <h1 class="restro-login__title">{{ $t('auth.superAdmin.title') }}</h1>
-      <p class="restro-login__subtitle">{{ $t('auth.superAdmin.subtitle') }}</p>
-      <form class="restro-form" @submit.prevent="handleLogin" novalidate>
+      <div class="restro-login__intro">
+        <h1 class="restro-login__title">{{ pageTitle }}</h1>
+        <p class="restro-login__subtitle">{{ pageSubtitle }}</p>
+        <p v-if="isEmailStep" class="restro-login__detail">{{ $t('auth.superAdmin.unifiedDetail') }}</p>
+      </div>
+      <form class="restro-form" @submit.prevent="onSubmit" novalidate>
         <p v-if="formError" class="restro-form__msg restro-form__msg--error" role="alert">
           {{ formError }}
         </p>
-        <div class="restro-form__stack">
+
+        <div v-if="isEmailStep" class="restro-form__stack">
+          <a
+            v-if="googleSignInEnabled"
+            class="restro-login__google"
+            href="/auth/google/redirect"
+          >
+            <i class="fab fa-google restro-login__google-icon" aria-hidden="true" />
+            {{ $t('auth.superAdmin.signInWithGoogle') }}
+          </a>
+          <p v-if="googleSignInEnabled" class="restro-login__or">
+            <span>{{ $t('auth.superAdmin.orContinueEmail') }}</span>
+          </p>
           <div class="restro-form__field">
             <div class="restro-form__label-row">
-              <label class="restro-form__label" for="super-login-email">{{ $t('auth.login.email') }}</label>
-              <RestroInfoTip :text="$t('auth.superAdmin.tipEmail')" />
+              <label class="restro-form__label" for="unified-login-email">{{ $t('auth.login.email') }}</label>
+              <RestroInfoTip :text="$t('auth.superAdmin.tipEmailLookup')" />
             </div>
             <input
-              id="super-login-email"
-              v-model.trim="form.email"
+              id="unified-login-email"
+              v-model.trim="lookupEmail"
               type="email"
               class="restro-form__input"
+              :class="{ 'restro-form__input--invalid': fieldErrors.lookup }"
               autocomplete="username"
-              :class="{ 'restro-form__input--invalid': fieldErrors.email }"
               :placeholder="$t('auth.login.email')"
               :disabled="loading"
               required
             />
-            <p v-if="fieldErrors.email" class="restro-form__field-error">{{ fieldErrors.email }}</p>
+            <p v-if="fieldErrors.lookup" class="restro-form__field-error">{{ fieldErrors.lookup }}</p>
+          </div>
+          <button class="restro-form__submit" type="submit" :disabled="loading">
+            {{ loading ? '…' : $t('auth.superAdmin.continue') }}
+          </button>
+        </div>
+
+        <div v-else class="restro-form__stack">
+          <div class="restro-form__field">
+            <div class="restro-form__label-row">
+              <label class="restro-form__label" for="super-login-email-ro">{{ $t('auth.login.email') }}</label>
+            </div>
+            <input
+              id="super-login-email-ro"
+              :value="form.email"
+              type="email"
+              class="restro-form__input restro-form__input--readonly"
+              readonly
+              tabindex="-1"
+              autocomplete="username"
+            />
           </div>
           <div class="restro-form__field restro-form__field--pw">
             <div class="restro-form__label-row">
@@ -62,24 +97,39 @@
           <button class="restro-form__submit" type="submit" :disabled="loading">
             {{ loading ? '…' : $t('auth.login.submit') }}
           </button>
+          <button type="button" class="restro-login__textbtn" @click="goBackToEmailStep">
+            {{ $t('auth.superAdmin.changeEmail') }}
+          </button>
         </div>
       </form>
+      <p class="restro-login__register">
+        <span class="restro-login__register-prompt">{{ $t('auth.superAdmin.registerPrompt') }}</span>
+        <router-link :to="{ name: 'home' }" class="restro-login__register-link">
+          {{ $t('auth.superAdmin.registerCta') }}
+        </router-link>
+      </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
 import RestroInfoTip from '../../components/frontend/RestroInfoTip.vue'
 
+const { t } = useI18n()
+const route = useRoute()
 const router = useRouter()
+
 const loading = ref(false)
 const showPassword = ref(false)
 const formError = ref('')
+const lookupEmail = ref('')
+
 const fieldErrors = reactive({
-  email: '',
+  lookup: '',
   password: ''
 })
 
@@ -88,15 +138,132 @@ const form = reactive({
   password: ''
 })
 
-function clearFieldErrors() {
-  fieldErrors.email = ''
+const isEmailStep = computed(() => route.name !== 'login-password')
+
+const googleSignInEnabled = computed(
+  () => typeof window !== 'undefined' && !!window.GOOGLE_SIGNIN_ENABLED
+)
+
+const pageTitle = computed(() =>
+  isEmailStep.value ? t('auth.superAdmin.unifiedTitle') : t('auth.superAdmin.passwordStepTitle')
+)
+
+const pageSubtitle = computed(() =>
+  isEmailStep.value
+    ? t('auth.superAdmin.unifiedSubtitle')
+    : t('auth.superAdmin.passwordStepSubtitle', { email: form.email })
+)
+
+function scrollIntoFormAndFocus (el) {
+  if (!el) return
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  try {
+    el.focus({ preventScroll: true })
+  } catch {
+    el.focus()
+  }
+}
+
+function focusById (id) {
+  const el = document.getElementById(id)
+  scrollIntoFormAndFocus(el)
+}
+
+function clearFieldErrors () {
+  fieldErrors.lookup = ''
   fieldErrors.password = ''
 }
 
-async function handleLogin() {
+const STEP1_ROUTE_KEY = 'airestro_login_step1_route'
+
+watch(
+  () => [route.name, route.query.email],
+  () => {
+    formError.value = ''
+    clearFieldErrors()
+    if (route.name === 'login-password') {
+      const q = route.query.email
+      if (typeof q === 'string' && q.trim()) {
+        form.email = q.trim()
+        lookupEmail.value = form.email
+      } else {
+        void router.replace({ name: 'login' })
+      }
+    } else if (route.name === 'login' || route.name === 'super-login') {
+      form.password = ''
+      const q = route.query.email
+      if (typeof q === 'string' && q.trim()) {
+        lookupEmail.value = q.trim()
+      }
+    }
+  },
+  { immediate: true }
+)
+
+function goBackToEmailStep () {
+  form.password = ''
+  formError.value = ''
+  const from = sessionStorage.getItem(STEP1_ROUTE_KEY)
+  const target = from === 'super-login' ? 'super-login' : 'login'
+  void router.push({ name: target })
+}
+
+async function runEmailLookup () {
+  clearFieldErrors()
+  sessionStorage.setItem(STEP1_ROUTE_KEY, route.name)
+  const emailEl = document.getElementById('unified-login-email')
+  const raw = lookupEmail.value.trim()
+  if (!raw) {
+    fieldErrors.lookup = t('auth.superAdmin.emailRequired')
+    scrollIntoFormAndFocus(emailEl)
+    return
+  }
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRe.test(raw)) {
+    fieldErrors.lookup = t('auth.superAdmin.emailInvalid')
+    scrollIntoFormAndFocus(emailEl)
+    return
+  }
+
   loading.value = true
   formError.value = ''
+  try {
+    const { data } = await window.axios.post('/login/lookup', { email: raw })
+    if (data.account_type === 'super_admin') {
+      await router.push({ name: 'login-password', query: { email: data.email } })
+      return
+    }
+    if (data.account_type === 'tenant' && data.login_url) {
+      const url = new URL(data.login_url)
+      url.searchParams.set('email', data.email)
+      window.location.href = url.toString()
+      return
+    }
+    formError.value = t('auth.superAdmin.lookupUnexpected')
+    scrollIntoFormAndFocus(emailEl)
+  } catch (err) {
+    const msg = err.response?.data?.message || t('auth.superAdmin.lookupNotFound')
+    formError.value = msg
+    scrollIntoFormAndFocus(emailEl)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handlePasswordLogin () {
   clearFieldErrors()
+  formError.value = ''
+  if (!form.email?.trim()) {
+    void router.replace({ name: 'login' })
+    return
+  }
+  if (!form.password) {
+    fieldErrors.password = t('auth.superAdmin.passwordRequired')
+    focusById('super-login-pw')
+    return
+  }
+
+  loading.value = true
   try {
     const http = window.axios
     const response = await http.post('/login', {
@@ -124,16 +291,17 @@ async function handleLogin() {
         position: 'top-end',
         toast: true
       })
-      router.push('/dashboard')
+      await router.push('/dashboard')
     } else {
       formError.value = response.data.message || 'Login failed.'
     }
   } catch (error) {
     const data = error.response?.data
-    if (data?.errors?.email?.[0]) fieldErrors.email = data.errors.email[0]
+    if (data?.errors?.email?.[0]) fieldErrors.lookup = data.errors.email[0]
     if (data?.errors?.password?.[0]) fieldErrors.password = data.errors.password[0]
     const msg = data?.message || 'Invalid credentials'
     formError.value = msg
+    focusById('super-login-pw')
     await Swal.fire({
       icon: 'error',
       title: 'Login Failed',
@@ -142,6 +310,14 @@ async function handleLogin() {
     })
   } finally {
     loading.value = false
+  }
+}
+
+async function onSubmit () {
+  if (isEmailStep.value) {
+    await runEmailLookup()
+  } else {
+    await handlePasswordLogin()
   }
 }
 </script>
@@ -162,6 +338,11 @@ async function handleLogin() {
   max-width: 32rem;
 }
 
+.restro-login__intro {
+  text-align: left;
+  margin-bottom: 1.1rem;
+}
+
 .restro-login__title {
   font-size: 1.28rem;
   font-weight: 800;
@@ -169,16 +350,125 @@ async function handleLogin() {
   margin: 0 0 0.5rem;
   line-height: 1.25;
   letter-spacing: -0.02em;
-  text-align: center;
+  text-align: left;
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .restro-login__subtitle {
-  margin: 0 0 1.35rem;
+  margin: 0 0 0.5rem;
   font-size: 0.9rem;
   color: #5e5e5e;
-  line-height: 1.45;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.restro-login__detail {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #6e6e6e;
+  line-height: 1.55;
+  text-align: left;
+  text-wrap: pretty;
+}
+
+.restro-login__google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.72rem 1rem;
+  border: 1px solid #dadce0;
+  border-radius: 999px;
+  background: #fff;
+  color: #3c4043;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.restro-login__google:hover {
+  background: #f8f9fa;
+  border-color: #c6c6c6;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.12);
+  color: #202124;
+}
+
+.restro-login__google-icon {
+  font-size: 1.1rem;
+  color: #4285f4;
+}
+
+.restro-login__or {
+  margin: 0;
   text-align: center;
+  font-size: 0.78rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  position: relative;
+}
+
+.restro-login__or span {
+  background: #fff;
+  padding: 0 0.65rem;
+  position: relative;
+  z-index: 1;
+}
+
+.restro-login__or::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: #e5e5e5;
+  z-index: 0;
+}
+
+.restro-login__register {
+  margin: 1.15rem 0 0;
+  text-align: left;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #444;
+}
+
+.restro-login__register-prompt {
+  margin-right: 0.35rem;
+}
+
+.restro-login__register-link {
+  font-weight: 600;
+  color: #00844d;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.restro-login__register-link:hover {
+  color: #006a3e;
+}
+
+.restro-login__textbtn {
+  margin: 0.25rem 0 0;
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  background: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #00844d;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.restro-login__textbtn:hover {
+  color: #006a3e;
 }
 </style>
 
@@ -223,6 +513,10 @@ async function handleLogin() {
   box-sizing: border-box;
   transition: border-color 0.2s, box-shadow 0.2s;
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+.restro-login .restro-form__input--readonly {
+  background: #f4f4f4;
+  color: #333;
 }
 .restro-login .restro-form__input--invalid {
   border-color: #c62828;

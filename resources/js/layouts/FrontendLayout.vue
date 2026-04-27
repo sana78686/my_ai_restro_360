@@ -75,6 +75,7 @@
           <img src="/assets/logo/airestro360.png" alt="AiRestro360" class="restro-header__logo" />
         </router-link>
         <div class="restro-header__actions">
+          <router-link to="/login" class="restro-header__login">{{ $t('nav.login') }}</router-link>
           <LanguageSwitcher class="restro-header__lang" />
         </div>
       </div>
@@ -219,7 +220,11 @@ let restaurantLoginModal = null;
 const route = useRoute();
 
 const isHome = computed(() => route.name === 'home');
-const isMinimalAuth = computed(() => route.name === 'login' || route.name === 'super-login');
+const isMinimalAuth = computed(() =>
+  route.name === 'login' ||
+  route.name === 'login-password' ||
+  route.name === 'super-login'
+);
 
 watch(
   [isHome, isMinimalAuth],
@@ -897,16 +902,43 @@ body.restro-body-home .frontend-layout {
 .restro-header__actions {
   display: flex;
   align-items: center;
+  gap: 0.75rem;
+}
+
+.restro-header__login {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #00844d;
+  text-decoration: none;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid #00844d;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.restro-header__login:hover {
+  background: #00844d;
+  color: #fff;
 }
 
 .restro-header .language-btn {
   color: #1a1a1a !important;
   background: #fff !important;
-  border: 1px solid #ddd !important;
+  border: 1px solid color-mix(in srgb, #00844d 35%, #d0d0d0) !important;
+  border-radius: 999px !important;
 }
 
-.restro-header .language-btn:hover {
+.restro-header .language-btn:hover,
+.restro-header .language-btn:focus,
+.restro-header .language-btn.show {
   border-color: #00844d !important;
+  background: color-mix(in srgb, #00844d 6%, #fff) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #00844d 18%, transparent) !important;
+}
+
+.restro-header .language-btn .language-btn__globe {
+  color: #00844d !important;
 }
 
 .main-content--home {

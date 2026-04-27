@@ -55,6 +55,7 @@ use App\Http\Controllers\API\Tenant\BranchController;
 Route::post('/tenant/find-by-email', [TenantController::class, 'findByEmail']);
 // Public Routes
 Route::get('/check-subdomain/{subdomain}', [AuthController::class, 'checkSubdomain']);
+Route::post('/login/lookup', [AuthController::class, 'loginLookup']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [RegisterController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
@@ -331,19 +332,38 @@ Route::prefix('stripe')->group(function () {
         */
         Route::get('/auth-check', function () {
             $user = Auth::user();
-            Log::info("user is:".$user);
+            if (! $user) {
+                return response()->json([
+                    'authenticated' => false,
+                    'user' => null,
+                    'role_name' => null,
+                ], 401);
+            }
 
-            $roles = $user->getRoleNames();
-            Log::info("roles are:".$roles);
-            $roleName = $roles->first();
-            $formattedRoleName = ucwords(str_replace('_', ' ', $roleName));
+            try {
+                $roles = $user->getRoleNames();
+                $roleName = $roles->first();
+                $formattedRoleName = $roleName
+                    ? ucwords(str_replace('_', ' ', (string) $roleName))
+                    : 'Staff';
 
-            Log::info("Role Name is:".$roleName);
-            return response()->json([
-                'authenticated' => $user ? true : false,
-                'user' => $user,
-                'role_name' => $formattedRoleName
-            ]);
+                return response()->json([
+                    'authenticated' => true,
+                    'user' => $user,
+                    'role_name' => $formattedRoleName,
+                ]);
+            } catch (\Throwable $e) {
+                Log::warning('auth-check role resolution failed', [
+                    'user_id' => $user->id,
+                    'message' => $e->getMessage(),
+                ]);
+
+                return response()->json([
+                    'authenticated' => true,
+                    'user' => $user,
+                    'role_name' => 'Staff',
+                ]);
+            }
         });
 
 

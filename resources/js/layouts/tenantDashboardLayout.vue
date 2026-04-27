@@ -59,9 +59,9 @@
                   <div class="mb-2 text-uppercase text-muted text-xs leading-tight" style="letter-spacing: 0.5px;">Theme Settings</div>
                   <router-link to="/dashboard/settings/general" class="dropdown-item text-xs leading-tight"><i class="fas fa-store"></i> Business settings</router-link>
                   <router-link to="/dashboard/website-settings" class="dropdown-item text-xs leading-tight"><i class="fas fa-globe"></i> Website settings</router-link>
-                  <router-link to="/dashboard/themes" class="dropdown-item text-xs leading-tight"><i class="fas fa-paint-brush"></i> Themes</router-link>
-                  <router-link to="/dashboard/colors" class="dropdown-item text-xs leading-tight"><i class="fas fa-palette"></i> Colors</router-link>
-                  <router-link to="/dashboard/layouts" class="dropdown-item text-xs leading-tight"><i class="fas fa-columns"></i> Layouts</router-link>
+                  <router-link to="/dashboard/website-settings/template" class="dropdown-item text-xs leading-tight"><i class="fas fa-paint-brush"></i> Themes</router-link>
+                  <router-link to="/dashboard/website-settings/theme" class="dropdown-item text-xs leading-tight"><i class="fas fa-palette"></i> Colors</router-link>
+                  <router-link to="/dashboard/website-settings/sections" class="dropdown-item text-xs leading-tight"><i class="fas fa-columns"></i> Layouts</router-link>
                 </div>
               </div>
             </div>
@@ -189,7 +189,7 @@
             <li>
               <router-link class="dropdown-item d-flex align-items-center text-xs leading-tight" to="/dashboard/pricing">
                 <i class="fas fa-rocket td-accent-icon me-2"></i>
-                <span>{{ $t('Manage Subscribtions') }}</span>
+                <span>{{ $t('manageSubscriptions') }}</span>
               </router-link>
             </li>
             <li>
@@ -320,29 +320,53 @@
               <i class="fas fa-th-large td-nav-ico" aria-hidden="true"></i>
               <span>{{ $t('dashboard') }}</span>
             </router-link>
+
+            <hr class="td-nav-hr" aria-hidden="true" />
             <div class="td-nav-section">Orders &amp; service</div>
+
             <router-link
-              to="/dashboard/orders"
+              to="/dashboard/pos"
               class="td-nav-link text-xs leading-tight"
               active-class="active"
-              :title="collapsedNavTip(ordersNavTip)"
-              :aria-label="collapsedNavTip(ordersNavTip)"
+              :title="collapsedNavTip('POS')"
+              aria-label="POS"
               @click="closeSidebar"
             >
-              <i class="fas fa-shopping-cart td-nav-ico" aria-hidden="true"></i>
-              <span class="flex-grow-1">{{ $t('orders') }}</span>
-              <span v-if="counts.orders > 0" class="badge bg-light text-dark text-xs leading-tight">{{ counts.orders }}</span>
+              <i class="fas fa-clipboard-list td-nav-ico" aria-hidden="true"></i>
+              <span>POS</span>
             </router-link>
             <router-link
-              to="/dashboard/stock-check-requests"
+              to="/dashboard/kitchen"
               class="td-nav-link text-xs leading-tight"
               active-class="active"
-              :title="collapsedNavTip($t('stockCheckRequests'))"
-              :aria-label="collapsedNavTip($t('stockCheckRequests'))"
+              :title="collapsedNavTip('Kitchen (KDS)')"
+              aria-label="Kitchen (KDS)"
               @click="closeSidebar"
             >
-              <i class="fas fa-boxes td-nav-ico" aria-hidden="true"></i>
-              <span>{{ $t('stockCheckRequests') }}</span>
+              <i class="fas fa-fire td-nav-ico" aria-hidden="true"></i>
+              <span>Kitchen (KDS)</span>
+            </router-link>
+            <router-link
+              to="/dashboard/ai-agents"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('AI Agents')"
+              aria-label="AI Agents"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-robot td-nav-ico" aria-hidden="true"></i>
+              <span>AI Agents</span>
+            </router-link>
+            <router-link
+              to="/dashboard/tables"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Tables')"
+              aria-label="Tables"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-utensils td-nav-ico" aria-hidden="true"></i>
+              <span>Tables</span>
             </router-link>
             <router-link
               to="/dashboard/reservations"
@@ -352,31 +376,71 @@
               :aria-label="collapsedNavTip($t('reservations'))"
               @click="closeSidebar"
             >
-              <i class="fas fa-calendar-alt td-nav-ico" aria-hidden="true"></i>
+              <i class="fas fa-clock td-nav-ico" aria-hidden="true"></i>
               <span>{{ $t('reservations') }}</span>
             </router-link>
-            <div class="td-nav-section">Engagement</div>
             <router-link
-              to="/dashboard/contact-reqs"
+              to="/dashboard/stock-check-requests"
               class="td-nav-link text-xs leading-tight"
               active-class="active"
-              :title="collapsedNavTip($t('contactReqs'))"
-              :aria-label="collapsedNavTip($t('contactReqs'))"
+              :title="collapsedNavTip($t('stockCheckRequests'))"
+              :aria-label="collapsedNavTip($t('stockCheckRequests'))"
               @click="closeSidebar"
             >
-              <i class="fas fa-calendar-alt td-nav-ico" aria-hidden="true"></i>
-              <span>{{ $t('contactReqs') }}</span>
+              <i class="fas fa-clipboard-check td-nav-ico" aria-hidden="true"></i>
+              <span>Stock checks reqs</span>
+            </router-link>
+
+            <hr class="td-nav-hr" aria-hidden="true" />
+            <div class="td-nav-section">Menu</div>
+
+            <router-link
+              to="/dashboard/categories"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip($t('categories'))"
+              :aria-label="collapsedNavTip($t('categories'))"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-folder td-nav-ico" aria-hidden="true"></i>
+              <span>{{ $t('categories') }}</span>
             </router-link>
             <router-link
-              to="/dashboard/subscribers"
+              to="/dashboard/products"
               class="td-nav-link text-xs leading-tight"
               active-class="active"
-              :title="collapsedNavTip($t('subscribers'))"
-              :aria-label="collapsedNavTip($t('subscribers'))"
+              :title="collapsedNavTip('Menu items')"
+              aria-label="Menu items"
               @click="closeSidebar"
             >
-              <i class="fas fa-calendar-alt td-nav-ico" aria-hidden="true"></i>
-              <span>{{ $t('subscribers') }}</span>
+              <i class="fas fa-shopping-bag td-nav-ico" aria-hidden="true"></i>
+              <span>Menu items</span>
+            </router-link>
+            <router-link
+              to="/dashboard/deals"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Deals')"
+              aria-label="Deals"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-percent td-nav-ico" aria-hidden="true"></i>
+              <span>Deals</span>
+            </router-link>
+
+            <hr class="td-nav-hr" aria-hidden="true" />
+            <div class="td-nav-section">People</div>
+
+            <router-link
+              to="/dashboard/parties"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Parties')"
+              aria-label="Parties"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-glass-cheers td-nav-ico" aria-hidden="true"></i>
+              <span>Parties</span>
             </router-link>
             <router-link
               to="/dashboard/customers"
@@ -386,10 +450,83 @@
               :aria-label="collapsedNavTip($t('customers'))"
               @click="closeSidebar"
             >
-              <i class="fas fa-users td-nav-ico" aria-hidden="true"></i>
+              <i class="fas fa-user td-nav-ico" aria-hidden="true"></i>
               <span>{{ $t('customers') }}</span>
             </router-link>
-            <div class="td-nav-section">Menu</div>
+            <router-link
+              to="/dashboard/users"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Staff management')"
+              aria-label="Staff management"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-user-friends td-nav-ico" aria-hidden="true"></i>
+              <span>Staff management</span>
+            </router-link>
+            <router-link
+              to="/dashboard/delivery-boy"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Rider payouts')"
+              aria-label="Rider payouts"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-truck td-nav-ico" aria-hidden="true"></i>
+              <span>Rider payouts</span>
+            </router-link>
+
+            <hr class="td-nav-hr" aria-hidden="true" />
+            <div class="td-nav-section">Inventory</div>
+
+            <router-link
+              to="/dashboard/stock-items"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Stock items')"
+              aria-label="Stock items"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-boxes td-nav-ico" aria-hidden="true"></i>
+              <span>Stock items</span>
+            </router-link>
+            <router-link
+              to="/dashboard/purchase-orders"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Purchase orders')"
+              aria-label="Purchase orders"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-file-invoice td-nav-ico" aria-hidden="true"></i>
+              <span>Purchase orders</span>
+            </router-link>
+            <router-link
+              to="/dashboard/receive-stock"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Receive stock')"
+              aria-label="Receive stock"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-dolly td-nav-ico" aria-hidden="true"></i>
+              <span>Receive stock</span>
+            </router-link>
+            <router-link
+              to="/dashboard/purchase-history"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Purchase history')"
+              aria-label="Purchase history"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-history td-nav-ico" aria-hidden="true"></i>
+              <span>Purchase history</span>
+            </router-link>
+
+            <hr class="td-nav-hr" aria-hidden="true" />
+            <div class="td-nav-section">Store &amp; account</div>
+
             <router-link
               to="/dashboard/bulletin"
               class="td-nav-link text-xs leading-tight"
@@ -400,28 +537,6 @@
             >
               <i class="fas fa-bullhorn td-nav-ico" aria-hidden="true"></i>
               <span>{{ $t('bulletin') }}</span>
-            </router-link>
-            <router-link
-              to="/dashboard/categories"
-              class="td-nav-link text-xs leading-tight"
-              active-class="active"
-              :title="collapsedNavTip($t('categories'))"
-              :aria-label="collapsedNavTip($t('categories'))"
-              @click="closeSidebar"
-            >
-              <i class="fas fa-list td-nav-ico" aria-hidden="true"></i>
-              <span>{{ $t('categories') }}</span>
-            </router-link>
-            <router-link
-              to="/dashboard/products"
-              class="td-nav-link text-xs leading-tight"
-              active-class="active"
-              :title="collapsedNavTip($t('products'))"
-              :aria-label="collapsedNavTip($t('products'))"
-              @click="closeSidebar"
-            >
-              <i class="fas fa-box td-nav-ico" aria-hidden="true"></i>
-              <span>{{ $t('products') }}</span>
             </router-link>
             <router-link
               to="/dashboard/cms"
@@ -449,14 +564,94 @@
               to="/dashboard/website-settings"
               class="td-nav-link text-xs leading-tight"
               :class="{ active: $route.path.startsWith('/dashboard/website-settings') }"
-              :title="collapsedNavTip('Website settings')"
-              :aria-label="collapsedNavTip('Website settings')"
+              :title="collapsedNavTip('Website setting')"
+              :aria-label="collapsedNavTip('Website setting')"
               @click="closeSidebar"
             >
               <i class="fas fa-globe td-nav-ico" aria-hidden="true"></i>
-              <span>Website settings</span>
+              <span>Website setting</span>
             </router-link>
-            <div class="td-nav-section">Administration</div>
+            <router-link
+              to="/dashboard/integration-api"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Integration / API')"
+              aria-label="Integration / API"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-plug td-nav-ico" aria-hidden="true"></i>
+              <span>Integration / API</span>
+            </router-link>
+            <router-link
+              to="/dashboard/pricing"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Subscription')"
+              aria-label="Subscription"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-rocket td-nav-ico" aria-hidden="true"></i>
+              <span>Subscription</span>
+            </router-link>
+            <router-link
+              to="/dashboard/personal-settings"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Profile setting')"
+              aria-label="Profile setting"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-id-badge td-nav-ico" aria-hidden="true"></i>
+              <span>Profile setting</span>
+            </router-link>
+
+            <hr class="td-nav-hr" aria-hidden="true" />
+            <div class="td-nav-section">Other tools</div>
+            <router-link
+              to="/dashboard/orders"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip(ordersNavTip)"
+              :aria-label="collapsedNavTip(ordersNavTip)"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-shopping-cart td-nav-ico" aria-hidden="true"></i>
+              <span class="flex-grow-1">{{ $t('orders') }}</span>
+              <span v-if="counts.orders > 0" class="badge bg-light text-dark text-xs leading-tight">{{ counts.orders }}</span>
+            </router-link>
+            <router-link
+              to="/dashboard/quote-requests"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Quote requests')"
+              aria-label="Quote requests"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-file-signature td-nav-ico" aria-hidden="true"></i>
+              <span>Quote requests</span>
+            </router-link>
+            <router-link
+              to="/dashboard/contact-reqs"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip($t('contactReqs'))"
+              :aria-label="collapsedNavTip($t('contactReqs'))"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-envelope-open-text td-nav-ico" aria-hidden="true"></i>
+              <span>{{ $t('contactReqs') }}</span>
+            </router-link>
+            <router-link
+              to="/dashboard/subscribers"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip($t('subscribers'))"
+              :aria-label="collapsedNavTip($t('subscribers'))"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-user-plus td-nav-ico" aria-hidden="true"></i>
+              <span>{{ $t('subscribers') }}</span>
+            </router-link>
             <router-link
               to="/dashboard/notifications"
               class="td-nav-link text-xs leading-tight"
@@ -480,17 +675,50 @@
               <span>{{ $t('roles') }}</span>
             </router-link>
             <router-link
-              to="/dashboard/users"
+              to="/dashboard/email-settings"
               class="td-nav-link text-xs leading-tight"
               active-class="active"
-              :title="collapsedNavTip($t('users'))"
-              :aria-label="collapsedNavTip($t('users'))"
+              :title="collapsedNavTip($t('emailSetting'))"
+              :aria-label="collapsedNavTip($t('emailSetting'))"
               @click="closeSidebar"
             >
-              <i class="fas fa-user td-nav-ico" aria-hidden="true"></i>
-              <span>{{ $t('users') }}</span>
+              <i class="fas fa-envelope td-nav-ico" aria-hidden="true"></i>
+              <span>{{ $t('emailSetting') }}</span>
             </router-link>
-            <!-- <router-link to="/dashboard/maillogs" class="td-nav-link text-xs leading-tight" active-class="active" @click="closeSidebar"><i class="fas fa-envelope"></i> <span>{{ $t('mail_logs') }}</span></router-link> -->
+            <router-link
+              to="/dashboard/payment-gateways"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip($t('paymentGateways'))"
+              :aria-label="collapsedNavTip($t('paymentGateways'))"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-credit-card td-nav-ico" aria-hidden="true"></i>
+              <span>{{ $t('paymentGateways') }}</span>
+            </router-link>
+            <router-link
+              to="/dashboard/maillogs"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip($t('mail_logs'))"
+              :aria-label="collapsedNavTip($t('mail_logs'))"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-mail-bulk td-nav-ico" aria-hidden="true"></i>
+              <span>{{ $t('mail_logs') }}</span>
+            </router-link>
+            <router-link
+              to="/dashboard/plans"
+              class="td-nav-link text-xs leading-tight"
+              active-class="active"
+              :title="collapsedNavTip('Plans')"
+              aria-label="Plans"
+              @click="closeSidebar"
+            >
+              <i class="fas fa-list-alt td-nav-ico" aria-hidden="true"></i>
+              <span>Plans</span>
+            </router-link>
+
             <a
               href="javascript:void(0)"
               class="td-nav-link text-xs leading-tight"
@@ -1941,15 +2169,21 @@ export default {
   }
 }
 .td-nav-section {
-  font-size: 0.65rem;
-  color: var(--td-muted);
-  font-weight: 700;
-  margin: 1rem 0.875rem 0.35rem;
-  letter-spacing: 0.06em;
+  font-size: 0.62rem;
+  color: #9c6b4a;
+  font-weight: 800;
+  margin: 0.65rem 0.875rem 0.32rem;
+  letter-spacing: 0.085em;
   text-transform: uppercase;
 }
 .td-nav-section:first-of-type {
-  margin-top: 0.5rem;
+  margin-top: 0.35rem;
+}
+.td-nav-hr {
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  margin: 0.45rem 0.65rem;
+  opacity: 1;
 }
 .navbar-nav .nav-link {
   color: #222;

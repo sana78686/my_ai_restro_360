@@ -267,7 +267,7 @@ const routes = [
       {
         path: '/dashboard/cms',
         name: 'tenant-cms',
-        meta: { title: 'CMS ' },
+        meta: { title: 'Content System' },
         component: () => import('../views/tenant_dashboard/CMS.vue')
       },
       {
@@ -324,11 +324,76 @@ const routes = [
         meta: { title: 'Bulletin' },
         component: () => import('../views/tenant_dashboard/Bulletin.vue')
       },
-      // Add more tenant child routes here
+      {
+        path: '/dashboard/pos',
+        name: 'tenant-pos',
+        meta: { title: 'POS' },
+        component: () => import('../views/tenant_dashboard/ComingSoon.vue')
+      },
+      {
+        path: '/dashboard/kitchen',
+        name: 'tenant-kitchen',
+        meta: { title: 'Kitchen (KDS)' },
+        component: () => import('../views/tenant_dashboard/ComingSoon.vue')
+      },
+      {
+        path: '/dashboard/ai-agents',
+        name: 'tenant-ai-agents',
+        meta: { title: 'AI Agents' },
+        component: () => import('../views/tenant_dashboard/ComingSoon.vue')
+      },
+      {
+        path: '/dashboard/tables',
+        name: 'tenant-tables',
+        meta: { title: 'Tables' },
+        component: () => import('../views/tenant_dashboard/ComingSoon.vue')
+      },
+      {
+        path: '/dashboard/deals',
+        name: 'tenant-deals',
+        meta: { title: 'Deals' },
+        component: () => import('../views/tenant_dashboard/ComingSoon.vue')
+      },
+      {
+        path: '/dashboard/parties',
+        name: 'tenant-parties',
+        meta: { title: 'Parties' },
+        component: () => import('../views/tenant_dashboard/ComingSoon.vue')
+      },
+      {
+        path: '/dashboard/stock-items',
+        name: 'tenant-stock-items',
+        meta: { title: 'Stock Items' },
+        component: () => import('../views/tenant_dashboard/ComingSoon.vue')
+      },
+      {
+        path: '/dashboard/purchase-orders',
+        name: 'tenant-purchase-orders',
+        meta: { title: 'Purchase Orders' },
+        component: () => import('../views/tenant_dashboard/ComingSoon.vue')
+      },
+      {
+        path: '/dashboard/receive-stock',
+        name: 'tenant-receive-stock',
+        meta: { title: 'Receive Stock' },
+        component: () => import('../views/tenant_dashboard/ComingSoon.vue')
+      },
+      {
+        path: '/dashboard/purchase-history',
+        name: 'tenant-purchase-history',
+        meta: { title: 'Purchase History' },
+        component: () => import('../views/tenant_dashboard/ComingSoon.vue')
+      },
+      {
+        path: '/dashboard/integration-api',
+        name: 'tenant-integration-api',
+        meta: { title: 'Integration / API' },
+        component: () => import('../views/tenant_dashboard/ComingSoon.vue')
+      },
       {
         path: '/dashboard/delivery-boy',
         name: 'tenant-delivery-boy',
-        meta: { title: 'Delivery Boy' },
+        meta: { title: 'Rider payouts' },
         component: () => import('../views/tenant_dashboard/DeliveryBoy.vue')
       },
       {
@@ -352,14 +417,14 @@ const routes = [
       {
         path: '/dashboard/plans',
         name: 'tenant-plans',
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, title: 'Plans' },
         component: () => import('../views/tenant_dashboard/Plans.vue')
       },
 
       {
         path: '/dashboard/personal-settings',
         name: 'tenant-personal-settings',
-        meta: { title: 'Profile' },
+        meta: { title: 'Profile settings' },
         component: () => import('../views/tenant_dashboard/PersonalSettings.vue')
       },
       // In your router file - it's already there!
@@ -373,7 +438,7 @@ const routes = [
         path: '/dashboard/pricing',
         name: 'pricing',
         component: () => import('../views/tenant_dashboard/Pricing.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, title: 'Subscription' }
       },
       {
         path: '/dashboard/stripesuccess',

@@ -307,7 +307,7 @@ class TenantController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => ['required', Rule::in(['trial', 'active', 'inactive', 'suspended'])]
+            'status' => ['required', Rule::in(['pending', 'trial', 'active', 'inactive', 'suspended'])]
         ]);
 
         $tenant = Tenant::findOrFail($id);

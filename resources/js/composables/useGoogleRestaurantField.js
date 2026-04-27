@@ -1,5 +1,11 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { loadGoogleMapsPlaces } from '../utils/googleMapsPlacesLoader.js'
+import {
+  isNewPlacesAutocompleteAvailable,
+  createPlacesSessionToken,
+  fetchPlacePredictionsNew,
+  fetchPlaceDetailsFromPrediction
+} from '../utils/googlePlacesProgrammatic.js'
 
 /**
  * Restaurant name + Google Places establishment autocomplete, with silent geolocation
@@ -20,18 +26,7 @@ export function useGoogleRestaurantField () {
   const wrapRef = ref(null)
   const inputRef = ref(null)
   let debounceTimer = null
-  let autocompleteService = null
-  let placesService = null
-
-  const initServices = () => {
-    if (!window.google?.maps?.places) return
-    autocompleteService = new window.google.maps.places.AutocompleteService()
-    placesService = new window.google.maps.places.PlacesService(document.createElement('div'))
-  }
-
-  const loadScript = () => {
-    loadGoogleMapsPlaces(initServices)
-  }
+  let autocompleteSessionToken = null
 
   const getUserLocation = () => {
     if (!navigator.geolocation) return
@@ -69,65 +64,56 @@ export function useGoogleRestaurantField () {
 
   const handleInput = () => {
     if (debounceTimer) clearTimeout(debounceTimer)
-      if (!name.value) {
-        predictions.value = []
-        showAutocomplete.value = false
-        return
+    if (!name.value) {
+      predictions.value = []
+      showAutocomplete.value = false
+      autocompleteSessionToken = null
+      return
+    }
+    debounceTimer = setTimeout(async () => {
+      if (!isNewPlacesAutocompleteAvailable()) return
+      if (!autocompleteSessionToken) {
+        autocompleteSessionToken = createPlacesSessionToken()
       }
-      debounceTimer = setTimeout(() => {
-        if (!autocompleteService) return
-        const request = {
+      try {
+        const list = await fetchPlacePredictionsNew({
           input: name.value,
-          types: ['establishment']
-        }
-      if (userLocation.value) {
-        request.location = new window.google.maps.LatLng(userLocation.value.lat, userLocation.value.lng)
-        request.radius = 50000
+          sessionToken: autocompleteSessionToken,
+          userLocation: userLocation.value,
+          includedRegionCodes: null,
+          includedPrimaryTypes: null
+        })
+        predictions.value = list
+        showAutocomplete.value = list.length > 0
+      } catch (e) {
+        console.error('Places autocomplete:', e)
+        predictions.value = []
       }
-      autocompleteService.getPlacePredictions(request, (results, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-          predictions.value = results
-          showAutocomplete.value = true
-        } else {
-          predictions.value = []
-        }
-      })
     }, 200)
   }
 
-  const selectPlace = (prediction) => {
+  const selectPlace = async (prediction) => {
     name.value = prediction.description
     placeId.value = prediction.place_id
     isCustom.value = false
     showAutocomplete.value = false
-    if (!placesService) return
-    placesService.getDetails(
-      {
-        placeId: prediction.place_id,
-        fields: ['name', 'geometry', 'formatted_address', 'address_components', 'place_id']
-      },
-      (place, status) => {
-        if (status !== window.google.maps.places.PlacesServiceStatus.OK || !place) return
-        const addressComponents = {}
-        place.address_components.forEach((component) => {
-          const type = component.types[0]
-          addressComponents[type] = component.long_name
-          if (component.types.includes('country')) {
-            addressComponents.country_code = component.short_name
-          }
-        })
-        placeDetails.value = {
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-          formatted_address: place.formatted_address,
-          postal_code: addressComponents.postal_code || '',
-          country: addressComponents.country || '',
-          country_iso: addressComponents.country_code || null,
-          state: addressComponents.administrative_area_level_1 || '',
-          city: addressComponents.locality || addressComponents.administrative_area_level_2 || ''
-        }
+    if (!prediction.placePrediction) return
+    try {
+      const place = await fetchPlaceDetailsFromPrediction(prediction.placePrediction)
+      placeDetails.value = {
+        lat: place.lat,
+        lng: place.lng,
+        formatted_address: place.formatted_address,
+        postal_code: place.postal_code,
+        country: place.country,
+        country_iso: place.country_iso,
+        state: place.state,
+        city: place.city
       }
-    )
+      autocompleteSessionToken = createPlacesSessionToken()
+    } catch (e) {
+      console.error('Place details:', e)
+    }
   }
 
   const onBlur = () => {
@@ -150,14 +136,13 @@ export function useGoogleRestaurantField () {
     (loc) => {
       if (!loc) return
       loadGoogleMapsPlaces(() => {
-        initServices()
         runReverseGeocode()
       })
     }
   )
 
   onMounted(() => {
-    loadScript()
+    loadGoogleMapsPlaces(() => {})
     getUserLocation()
     document.addEventListener('click', onDocClick)
   })

@@ -85,29 +85,15 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // If email not verified, generate/send OTP and require verification
+        // Admin approval is the gate; no post-login email OTP. Mark email verified on first sign-in.
         if (! $user->email_verified_at) {
-            $otp = (string) random_int(100000, 999999);
-            $expires = Carbon::now()->addMinutes(10);
-            $user->otp = $otp;
-            $user->otp_expires_at = $expires;
+            $user->email_verified_at = Carbon::now();
+            $user->otp = null;
+            $user->otp_expires_at = null;
             $user->save();
-
-            $this->syncAccountVerificationTokenToCentralTenant($otp, $expires);
-
-            try {
-                Mail::to($user->email)->send(new VerifyOtpMail($otp));
-            } catch (\Throwable $e) {
-                Log::error('Failed sending OTP email: ' . $e->getMessage());
-            }
-
-            return response()->json(array_merge([
-                'status' => 'verify_required',
-                'message' => 'Email verification required. OTP sent to your email.',
-            ], MailDebug::otpPayload($otp, $user->email), $this->verificationOtpConsolePayload($otp)), 200);
+            $this->clearAccountVerificationTokenOnCentralTenant();
         }
 
-        // Already verified → issue token
         $token = $user->createToken('tenant-token')->plainTextToken;
         return response()->json([
             'token' => $token,

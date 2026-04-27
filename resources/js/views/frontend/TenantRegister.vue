@@ -303,6 +303,12 @@ from 'vue'
 import { useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
 import { loadGoogleMapsPlaces } from '../../utils/googleMapsPlacesLoader.js'
+import {
+  isNewPlacesAutocompleteAvailable,
+  createPlacesSessionToken,
+  fetchPlacePredictionsNew,
+  fetchPlaceDetailsFromPrediction
+} from '../../utils/googlePlacesProgrammatic.js'
 import { Tooltip } from 'bootstrap'
 import { VueTelInput } from 'vue-tel-input'
 
@@ -319,8 +325,7 @@ export default {
     const predictions = ref([])
     const showAutocomplete = ref(false)
     const businessNameInput = ref(null)
-    const autocompleteService = ref(null)
-    const placesService = ref(null)
+    const placesSessionToken = ref(null)
     let debounceTimer = null
     let tooltips = []
     const showCountryModal = ref(false)
@@ -444,10 +449,7 @@ export default {
     }
 
     const initGooglePlaces = () => {
-      if (window.google && window.google.maps && window.google.maps.places) {
-        autocompleteService.value = new window.google.maps.places.AutocompleteService()
-        placesService.value = new window.google.maps.places.PlacesService(document.createElement('div'))
-      }
+      // Places script loaded; programmatic API uses AutocompleteSuggestion (new).
     }
 
     const loadGooglePlacesScript = () => {
@@ -550,32 +552,28 @@ export default {
       if (!form.value.businessName) {
         predictions.value = []
         showAutocomplete.value = false
+        placesSessionToken.value = null
         return
       }
 
-      debounceTimer = setTimeout(() => {
-        if (autocompleteService.value) {
-          const request = {
+      debounceTimer = setTimeout(async () => {
+        if (!isNewPlacesAutocompleteAvailable()) return
+        if (!placesSessionToken.value) {
+          placesSessionToken.value = createPlacesSessionToken()
+        }
+        try {
+          const list = await fetchPlacePredictionsNew({
             input: form.value.businessName,
-            types: ['establishment'],
-            componentRestrictions: { country: 'us' }
-          }
-
-          if (userLocation.value) {
-            request.location = new window.google.maps.LatLng(userLocation.value.lat, userLocation.value.lng)
-            request.radius = 50000
-            delete request.componentRestrictions
-          }
-
-          autocompleteService.value.getPlacePredictions(
-            request,
-            (results, status) => {
-              if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-                predictions.value = results
-                showAutocomplete.value = true
-              }
-            }
-          )
+            sessionToken: placesSessionToken.value,
+            userLocation: userLocation.value,
+            includedRegionCodes: userLocation.value ? null : ['us'],
+            includedPrimaryTypes: null
+          })
+          predictions.value = list
+          showAutocomplete.value = list.length > 0
+        } catch (e) {
+          console.error('Places autocomplete:', e)
+          predictions.value = []
         }
       }, 300)
     }
@@ -598,55 +596,33 @@ export default {
       }, 200)
     }
 
-    const selectPlace = (prediction) => {
+    const selectPlace = async (prediction) => {
       form.value.businessName = prediction.description
       form.value.placeId = prediction.place_id
       form.value.isCustomLocation = false
       showAutocomplete.value = false
 
-      // Get additional place details
-      if (placesService.value) {
-        placesService.value.getDetails(
-          {
-            placeId: prediction.place_id,
-            fields: [
-              'name',
-              'geometry',
-              'formatted_address',
-              'address_components',
-              'place_id'
-            ]
-          },
-          (place, status) => {
-            if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-              const addressComponents = {}
-              place.address_components.forEach(component => {
-                const type = component.types[0]
-                addressComponents[type] = component.long_name
-                if (type === 'country') {
-                  addressComponents.country_code = component.short_name
-                }
-              })
-
-              form.value.location = {
-                lat: place.geometry.location.lat(),
-                lng: place.geometry.location.lng(),
-                formatted_address: place.formatted_address,
-                postal_code: addressComponents.postal_code || '',
-                country: addressComponents.country || '',
-                state: addressComponents.administrative_area_level_1 || '',
-                city: addressComponents.locality || addressComponents.administrative_area_level_2 || ''
-              }
-
-              // Auto-generate subdomain from business name
-              form.value.subdomain = place.name
-                .toLowerCase()
-                .replace(/[^a-z0-9]/g, '-')
-                .replace(/-+/g, '-')
-                .replace(/^-|-$/g, '')
-            }
-          }
-        )
+      if (!prediction.placePrediction) return
+      try {
+        const place = await fetchPlaceDetailsFromPrediction(prediction.placePrediction)
+        form.value.location = {
+          lat: place.lat,
+          lng: place.lng,
+          formatted_address: place.formatted_address,
+          postal_code: place.postal_code || '',
+          country: place.country || '',
+          state: place.state || '',
+          city: place.city || ''
+        }
+        const subSource = (place.name || form.value.businessName || '').trim()
+        form.value.subdomain = subSource
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '')
+        placesSessionToken.value = createPlacesSessionToken()
+      } catch (e) {
+        console.error('Place details:', e)
       }
     }
 

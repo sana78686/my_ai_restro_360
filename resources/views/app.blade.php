@@ -16,6 +16,7 @@
     <!-- Environment Variables -->
     <script>
         window.MAIN_DOMAIN = "{{ config('app.main_domain') }}";
+        window.GOOGLE_SIGNIN_ENABLED = @json((bool) config('services.google.client_id'));
     </script>
 
     <!-- Scripts and Styles -->

@@ -195,8 +195,13 @@ function startResendCooldown() {
 }
 
 onMounted(() => {
-  const pendingEmail = localStorage.getItem('pending_verification_email')
-  if (pendingEmail) username.value = pendingEmail
+  const qEmail = route.query.email
+  if (typeof qEmail === 'string' && qEmail.trim()) {
+    username.value = decodeURIComponent(qEmail.trim())
+  } else {
+    const pendingEmail = localStorage.getItem('pending_verification_email')
+    if (pendingEmail) username.value = pendingEmail
+  }
   // Only force OTP UI for explicit deep-links (e.g. reset-password). Stale pending_verification_email
   // after admin approval must not hide the password form — user signs in and goes straight to dashboard.
   if (route.query.verify === '1') {
@@ -214,6 +219,15 @@ watch(
   }
 )
 
+watch(
+  () => route.query.email,
+  (qEmail) => {
+    if (typeof qEmail === 'string' && qEmail.trim()) {
+      username.value = decodeURIComponent(qEmail.trim())
+    }
+  }
+)
+
 async function onSubmit() {
   formError.value = ''
   if (showVerifyPanel.value) {
@@ -226,14 +240,6 @@ async function onSubmit() {
       email: username.value,
       password: password.value
     })
-
-    if (response.data.status === 'verify_required') {
-      localStorage.setItem('pending_verification_email', username.value)
-      showVerifyPanel.value = true
-      verifyError.value = ''
-      void logTenantOtpFromTableIfPending()
-      return
-    }
 
     const token = response.data.token
     localStorage.setItem('token', token)

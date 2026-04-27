@@ -99,21 +99,11 @@ class TenantController extends Controller
                 'trial_started_at' => now(),
                 'trial_ends_at' => now()->addDays(14),
                 'database_name' => $tenantDatabase,
-                'status' => 'trial',
+                'status' => 'pending',
                 'data' => ['business_name' => $request->business_name],
             ]);
 
             Log::info('Tenant record created: ' . $tenant->id);
-
-            // Send notification to super admin
-            try {
-                $superAdmin = User::role('super_user')->first();
-                if ($superAdmin) {
-                    Mail::to($superAdmin)->send(new NewTenantNotification($tenant));
-                }
-            } catch (\Throwable $mailEx) {
-                Log::warning('Failed sending notification: ' . $mailEx->getMessage());
-            }
 
             // Create domain
             $domain = $tenant->domains()->create(['domain' => $domainName]);
@@ -140,23 +130,17 @@ class TenantController extends Controller
                     'manage_orders', 'manage_staff', 'view_reports', 'manage_settings'
                 ];
 
+                $permissionModels = [];
                 foreach ($permissions as $permission) {
-                    Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+                    $permissionModels[] = Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
                 }
 
                 $restaurantOwnerRole = Role::firstOrCreate(
                     ['name' => 'restaurant_owner'],
                     ['guard_name' => 'web']
                 );
-                $restaurantOwnerRole->syncPermissions(Permission::all());
+                $restaurantOwnerRole->syncPermissions($permissionModels);
                 $tenantUser->assignRole('restaurant_owner');
-
-                // Send welcome email
-                try {
-                    Mail::to($tenantUser->email)->send(new \App\Mail\WelcomeEmail($tenantUser, $tenant));
-                } catch (\Throwable $mailEx) {
-                    Log::warning('Failed sending welcome email: ' . $mailEx->getMessage());
-                }
 
                 // Create settings
                 Setting::create([
@@ -177,7 +161,7 @@ class TenantController extends Controller
             // End tenancy
             tenancy()->end();
 
-            // ✅ Create Stripe Customer and Subscription
+            // ✅ Create Stripe Customer and Subscription (skip external Stripe calls while tenant is pending — faster signup)
             try {
                 $customer = null;
                 $stripeSubscription = null;
@@ -187,8 +171,12 @@ class TenantController extends Controller
                     ? Plan::find($request->plan_id)
                     : Plan::where('price', 0)->first(); // default free plan
 
-                // Create Stripe customer if plan has stripe_price_id
-                if ($plan && $plan->stripe_price_id && config('services.stripe.secret')) {
+                $callStripe = $tenant->status !== 'pending'
+                    && $plan
+                    && $plan->stripe_price_id
+                    && config('services.stripe.secret');
+
+                if ($callStripe) {
                     Stripe::setApiKey(config('services.stripe.secret'));
 
                     $customer = Customer::create([
@@ -199,8 +187,7 @@ class TenantController extends Controller
                     $tenant->update(['stripe_customer_id' => $customer->id]);
                 }
 
-                // Create Stripe subscription if plan has stripe_price_id
-                if ($plan && $plan->stripe_price_id && $customer) {
+                if ($callStripe && $customer) {
                     $stripeSubscription = StripeSubscription::create([
                         'customer' => $customer->id,
                         'items' => [['price' => $plan->stripe_price_id]],
@@ -210,7 +197,7 @@ class TenantController extends Controller
                 // Create database subscription
                 if ($plan) {
                     if ($plan->price == 0) {
-                        // Free plan — no payment required
+                        // Free plan — no payment required (tenant stays pending until super admin activates)
                         Subscription::create([
                             'tenant_id' => $tenant->id,
                             'plan_id' => $plan->id,
@@ -222,7 +209,6 @@ class TenantController extends Controller
 
                         $tenant->update([
                             'subscription_status' => 'active',
-                            'status' => 'active',
                         ]);
                     } else {
                         // Paid plan
@@ -248,23 +234,60 @@ class TenantController extends Controller
                 // Don't fail registration if subscription creation fails
             }
 
-            // Log mail in central database
-            try {
-                $content = view('emails.welcome', [
-                    'user' => (object)['name' => $request->owner_name, 'email' => $request->owner_email],
-                    'tenant' => $tenant,
-                    'loginUrl' => 'https://' . $tenant->subdomain . '.' . config('app.domain') . '/login',
-                ])->render();
+            $tenantId = $tenant->id;
+            $ownerEmail = $request->owner_email;
+            $ownerName = $request->owner_name;
 
-                MailLog::logMail(
-                    sendBy: 'system',
-                    sentTo: $request->owner_email,
-                    content: $content,
-                    mailType: 'welcome'
-                );
-            } catch (\Throwable $logEx) {
-                Log::warning('Failed to create mail log: ' . $logEx->getMessage());
-            }
+            app()->terminating(function () use ($tenantId, $ownerEmail, $ownerName) {
+                try {
+                    $tenantModel = Tenant::find($tenantId);
+                    if (! $tenantModel) {
+                        return;
+                    }
+
+                    foreach (User::role('super_user')->cursor() as $admin) {
+                        if (! $admin->email) {
+                            continue;
+                        }
+                        try {
+                            Mail::to($admin->email)->send(new NewTenantNotification($tenantModel));
+                        } catch (\Throwable $oneEx) {
+                            Log::warning('Failed sending new-tenant mail to '.$admin->email.': '.$oneEx->getMessage());
+                        }
+                    }
+
+                    tenancy()->initialize($tenantModel);
+                    try {
+                        $tenantUser = User::where('email', $ownerEmail)->first();
+                        if ($tenantUser) {
+                            Mail::to($tenantUser->email)->send(new \App\Mail\WelcomeEmail($tenantUser, $tenantModel));
+                        }
+                    } catch (\Throwable $mailEx) {
+                        Log::warning('Failed sending welcome email (deferred): '.$mailEx->getMessage());
+                    } finally {
+                        tenancy()->end();
+                    }
+
+                    try {
+                        $content = view('emails.welcome', [
+                            'user' => (object) ['name' => $ownerName, 'email' => $ownerEmail],
+                            'tenant' => $tenantModel,
+                            'loginUrl' => 'https://'.$tenantModel->subdomain.'.'.config('app.domain').'/login',
+                        ])->render();
+
+                        MailLog::logMail(
+                            sendBy: 'system',
+                            sentTo: $ownerEmail,
+                            content: $content,
+                            mailType: 'welcome'
+                        );
+                    } catch (\Throwable $logEx) {
+                        Log::warning('Failed to create mail log (deferred): '.$logEx->getMessage());
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('Deferred registration mail failed: '.$e->getMessage());
+                }
+            });
 
             Log::info('Tenant registration completed successfully');
 

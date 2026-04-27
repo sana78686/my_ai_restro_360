@@ -60,7 +60,7 @@ async function fetchAppNameFromAPI() {
       }
     } catch (error) {
       // If tenant endpoint fails, try main endpoint as fallback
-      if (isTenant && (error.response?.status === 404 || error.response?.status === 401)) {
+      if (isTenant && [401, 404, 500, 502, 503].includes(error.response?.status)) {
         try {
           const fallbackResponse = await axios.get('/app-name');
           if (fallbackResponse.data?.success && fallbackResponse.data?.data?.app_name) {

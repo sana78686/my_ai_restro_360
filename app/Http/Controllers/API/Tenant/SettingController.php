@@ -27,8 +27,8 @@ class SettingController extends Controller
                     'country' => '',
                     'state' => '',
                     'city' => '',
-                    'phone' => '',
-                    'email' => '',
+                    'public_phone' => '',
+                    'public_email' => '',
                     'place_id' => '',
                     'pickup_start_end_time' => '',
                     'latitude' => null,
@@ -38,14 +38,6 @@ class SettingController extends Controller
                     'date_format' => 'Y-m-d',
                     'time_format' => 'H:i:s',
                     'is_active' => true,
-                    'created_by' => auth()->id(),
-                    'updated_by' => auth()->id(),
-            //         'delivery_range_northeast_lat'=> "",
-            // 'delivery_range_northeast_lng'=> "",
-            // 'delivery_range_southwest_lat'=> "",
-            // 'delivery_range_southwest_lng'=> "",
-                    // 'available_delivery_start_location' => '',
-                    // 'available_delivery_end_location' => '',
                 ]);
             }
 

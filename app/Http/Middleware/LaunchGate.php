@@ -20,6 +20,7 @@ class LaunchGate
         'api/plans',
         'api/tenants/register',
         'api/tenant/find-by-email',
+        'api/login/lookup',
         'api/check-subdomain',
     ];
 

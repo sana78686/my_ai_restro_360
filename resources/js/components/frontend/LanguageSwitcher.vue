@@ -8,9 +8,9 @@
         data-bs-auto-close="true"
         aria-expanded="false"
       >
-        <i class="fas fa-globe me-2"></i>
+        <i class="fas fa-globe language-btn__globe" aria-hidden="true" />
         {{ getCurrentLanguageName }}
-        <i class="fas fa-chevron-down ms-2"></i>
+        <i class="fas fa-chevron-down language-btn__chev" aria-hidden="true" />
       </button>
       <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
         <li v-for="lang in languages" :key="lang.code">
@@ -53,7 +53,6 @@ const changeLanguage = (lang) => {
 }
 
 onMounted(() => {
-  // Ensure Bootstrap's dropdown is initialized
   if (typeof bootstrap !== 'undefined') {
     const dropdownElementList = document.querySelectorAll('.dropdown-toggle')
     dropdownElementList.forEach(dropdownToggleEl => {
@@ -74,15 +73,19 @@ onMounted(() => {
 }
 
 .language-btn {
-  color: #000;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  padding: 0.4rem 1rem;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-  display: flex;
+  --lang-accent: #00844d;
+  color: #1a1a1a;
+  background-color: #fff;
+  border: 1px solid color-mix(in srgb, var(--lang-accent) 35%, #d0d0d0);
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  display: inline-flex;
   align-items: center;
+  gap: 0.45rem;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .language-btn::after {
@@ -90,30 +93,34 @@ onMounted(() => {
 }
 
 .language-btn:hover,
-.language-btn:focus {
-  background-color: rgba(0, 0, 0, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: rgb(0, 0, 0);
+.language-btn:focus,
+.language-btn.show {
+  background-color: color-mix(in srgb, var(--lang-accent) 6%, #fff);
+  border-color: var(--lang-accent);
+  color: #111;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--lang-accent) 18%, transparent);
 }
 
-.language-btn .fa-globe {
-  color: #e6392a;
+.language-btn__globe {
+  color: var(--lang-accent);
+  font-size: 0.95rem;
 }
 
-.language-btn .fa-chevron-down {
-  font-size: 0.8rem;
-  opacity: 0.8;
+.language-btn__chev {
+  font-size: 0.72rem;
+  opacity: 0.75;
+  color: #444;
 }
 
 .dropdown-menu {
   position: absolute;
-  min-width: 150px;
-  margin-top: 0.5rem;
+  min-width: 11rem;
+  margin-top: 0.4rem;
   background: #fff;
-  border: none;
-  border-radius: 4px;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
-  padding: 0.5rem 0;
+  border: 1px solid #e2e2e2;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+  padding: 0.4rem 0;
   z-index: 1050;
   right: 0;
   left: auto;
@@ -124,10 +131,10 @@ onMounted(() => {
 }
 
 .dropdown-item {
-  padding: 0.6rem 1rem;
-  font-size: 0.9rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.88rem;
   color: #333;
-  transition: all 0.2s ease;
+  transition: background 0.15s, color 0.15s;
   display: flex;
   align-items: center;
   width: 100%;
@@ -135,10 +142,11 @@ onMounted(() => {
   background: none;
   text-align: left;
   cursor: pointer;
+  font-family: inherit;
 }
 
 .dropdown-item .fa-check {
-  color: #e6392a;
+  color: #00844d;
   font-size: 0.8rem;
 }
 
@@ -149,20 +157,19 @@ onMounted(() => {
 
 .dropdown-item:hover,
 .dropdown-item:focus {
-  background-color: #f8f9fa;
-  color: #e6392a;
+  background-color: color-mix(in srgb, #00844d 8%, #fff);
+  color: #0d3d28;
 }
 
 .dropdown-item.active {
-  background-color: #f8f9fa;
-  color: #e6392a;
-  font-weight: 500;
+  background-color: color-mix(in srgb, #00844d 10%, #fff);
+  color: #00844d;
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {
   .language-btn {
     margin: 0.5rem auto;
-    display: inline-flex;
   }
 
   .dropdown-menu {
