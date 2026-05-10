@@ -750,7 +750,10 @@ async function onSubmit () {
     }
     submitData.message = `${t('home.landing.leadNoteLabel')}:\n${buildLeadMessage()}`
 
-    const { data } = await window.axios.post('/tenants/register', submitData)
+    const { data } = await window.axios.post('/tenants/register', submitData, {
+      timeout: 300000,
+      headers: { Accept: 'application/json' },
+    })
     if (data.success && data.domain) {
       isBuilding.value = false
       postRegisterLoginUrl.value = `${window.location.protocol}//${data.domain}/login?registered=1`

@@ -13,6 +13,11 @@ return [
     'domain_model' => Domain::class,
 
     /**
+     * Max seconds PHP may spend on a single tenant self-register request (creates DB + runs all tenant migrations).
+     */
+    'registration_max_execution_time' => (int) env('TENANT_REGISTER_MAX_EXECUTION', 300),
+
+    /**
      * The list of domains hosting your central app.
      *
      * Only relevant if you're using the domain or subdomain identification middleware.
@@ -195,18 +200,24 @@ return [
 
     /**
      * Parameters used by the tenants:migrate command.
+     *
+     * Optional: place a dump at database/schema/tenant-schema.sql (MySQL) to load the
+     * baseline schema in one shot; Laravel will then run only migrations newer than the dump.
+     * Generate from a fully migrated tenant DB (mysqldump) or see Laravel schema dump docs.
      */
-    'migration_parameters' => [
+    'migration_parameters' => array_merge([
         '--force' => true, // This needs to be true to run migrations in production.
         '--path' => [database_path('migrations/tenant')],
         '--realpath' => true,
-    ],
+    ], is_file(database_path('schema/tenant-schema.sql')) ? [
+        '--schema-path' => database_path('schema/tenant-schema.sql'),
+    ] : []),
 
     /**
      * Parameters used by the tenants:seed command.
      */
     'seeder_parameters' => [
-        '--class' => 'DatabaseSeeder', // root seeder class
-        // '--force' => true, // This needs to be true to seed tenant databases in production
+        '--class' => 'Database\\Seeders\\TenantDatabaseSeeder',
+        '--force' => true,
     ],
 ];

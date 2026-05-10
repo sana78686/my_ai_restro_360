@@ -11,13 +11,11 @@ use App\Models\Setting;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Models\Role;
 use App\Mail\NewTenantNotification;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Validator;
 use Stancl\Tenancy\Database\Models\Domain;
 use Stripe\Stripe;
@@ -31,6 +29,7 @@ class TenantController extends Controller
         // dd($request->all());
 
         try {
+            @set_time_limit((int) config('tenancy.registration_max_execution_time', 300));
             Log::info('Tenant registration started');
 
             // Validate subdomain format
@@ -112,50 +111,33 @@ class TenantController extends Controller
             // Initialize tenant
             tenancy()->initialize($tenant);
 
-            // Setup tenant database
-            $tenant->run(function () use ($request, $tenant) {
-                // Create admin user
-                $tenantUser = User::create([
-                    'name' => $request->owner_name,
-                    'email' => $request->owner_email,
-                    'password' => Hash::make($request->password),
-                    'is_verified_by_admin' => false,
-                ]);
+            // Setup tenant database (after CreateDatabase + MigrateDatabase fired on TenantCreated)
+            $tenant->run(function () use ($request) {
+                DB::transaction(function () use ($request) {
+                    $tenantUser = User::create([
+                        'name' => $request->owner_name,
+                        'email' => $request->owner_email,
+                        'password' => Hash::make($request->password),
+                        'is_verified_by_admin' => false,
+                    ]);
 
-                // Setup roles and permissions
-                app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+                    // Permissions + roles are seeded in tenant DB (TenantRolesAndPermissionsSeeder via TenancyServiceProvider).
+                    $tenantUser->assignRole('restaurant_owner');
 
-                $permissions = [
-                    'manage_restaurant', 'manage_categories', 'manage_products',
-                    'manage_orders', 'manage_staff', 'view_reports', 'manage_settings'
-                ];
-
-                $permissionModels = [];
-                foreach ($permissions as $permission) {
-                    $permissionModels[] = Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
-                }
-
-                $restaurantOwnerRole = Role::firstOrCreate(
-                    ['name' => 'restaurant_owner'],
-                    ['guard_name' => 'web']
-                );
-                $restaurantOwnerRole->syncPermissions($permissionModels);
-                $tenantUser->assignRole('restaurant_owner');
-
-                // Create settings
-                Setting::create([
-                    'business_name' => $request->business_name,
-                    'address' => $request->location['address'] ?? null,
-                    'postal_code' => $request->location['postal_code'] ?? null,
-                    'country' => $request->location['country'] ?? null,
-                    'state' => $request->location['state'] ?? null,
-                    'city' => $request->location['city'] ?? null,
-                    'public_phone' => $request->owner_phone ?? null,
-                    'public_email' => $request->owner_email,
-                    'place_id' => $request->location['place_id'] ?? null,
-                    'latitude' => $request->location['latitude'] ?? null,
-                    'longitude' => $request->location['longitude'] ?? null,
-                ]);
+                    Setting::create([
+                        'business_name' => $request->business_name,
+                        'address' => $request->location['address'] ?? null,
+                        'postal_code' => $request->location['postal_code'] ?? null,
+                        'country' => $request->location['country'] ?? null,
+                        'state' => $request->location['state'] ?? null,
+                        'city' => $request->location['city'] ?? null,
+                        'public_phone' => $request->owner_phone ?? null,
+                        'public_email' => $request->owner_email,
+                        'place_id' => $request->location['place_id'] ?? null,
+                        'latitude' => $request->location['latitude'] ?? null,
+                        'longitude' => $request->location['longitude'] ?? null,
+                    ]);
+                });
             });
 
             // End tenancy

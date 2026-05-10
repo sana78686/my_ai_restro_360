@@ -771,7 +771,10 @@ export default {
 
         console.log('Submitting data:', submitData);
 
-        const response = await window.axios.post('/tenants/register', submitData);
+        const response = await window.axios.post('/tenants/register', submitData, {
+          timeout: 300000,
+          headers: { Accept: 'application/json' },
+        });
 
         if (response.data.success) {
           // Clear sessionStorage after successful registration
