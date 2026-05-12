@@ -146,6 +146,9 @@ const router = createRouter({
   routes
 });
 
+/** Central-auth login screens — if a session token exists, skip and open the dashboard. */
+const LOGIN_ROUTE_NAMES = new Set(['login', 'login-password', 'super-login']);
+
 // Navigation guard
 router.beforeEach((to, from, next) => {
   // Allow public routes
@@ -154,9 +157,15 @@ router.beforeEach((to, from, next) => {
     return;
   }
 
+  const token = localStorage.getItem('token');
+
+  if (token && LOGIN_ROUTE_NAMES.has(to.name)) {
+    next({ path: '/dashboard', replace: true });
+    return;
+  }
+
   // Check authentication for dashboard routes
   if (to.path.startsWith('/dashboard')) {
-    const token = localStorage.getItem('token');
     if (!token) {
       next('/login');
       return;
