@@ -9,6 +9,7 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use App\Models\User;
 use App\Models\Tenant;
+use App\Helpers\TenantHost;
 
 class WelcomeEmail extends Mailable
 {
@@ -46,7 +47,7 @@ class WelcomeEmail extends Mailable
             with: [
                 'user' => $this->user,
                 'tenant' => $this->tenant,
-                'loginUrl' => 'https://' . $this->tenant->subdomain . '.' . config('app.domain') . '/login',
+                'loginUrl' => TenantHost::loginUrl((string) ($this->tenant->subdomain ?? ''), $this->tenant->id),
             ],
         );
     }

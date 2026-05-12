@@ -38,7 +38,7 @@
                         <label for="domain" class="form-label">Subdomain</label>
                         <div class="input-group">
                             <input type="text" class="form-control" id="domain" name="domain" required>
-                            <span class="input-group-text">.{{ config('app.domain') }}</span>
+                            <span class="input-group-text">.{{ config('tenancy.tenant_domain_base') }}</span>
                         </div>
                     </div>
                 </div>

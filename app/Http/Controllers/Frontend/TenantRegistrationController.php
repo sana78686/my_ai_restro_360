@@ -12,6 +12,7 @@ use App\Mail\TenantWelcomeEmail;
 use App\Mail\TenantRegistrationNotification;
 use Stancl\Tenancy\Database\Models\Domain;
 use Stancl\Tenancy\Facades\Tenancy; // Import this
+use App\Helpers\TenantHost;
 
 class TenantRegistrationController extends Controller
 {
@@ -44,7 +45,7 @@ class TenantRegistrationController extends Controller
 
         // Create domain entry if using Stancl tenancy
         Domain::create([
-            'domain' => $request->domain . '.' . config('tenancy.central_domains')[0],
+            'domain' => TenantHost::fqdn($request->domain),
             'tenant_id' => $tenant->id,
         ]);
 

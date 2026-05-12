@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use App\Mail\NewTenantNotification;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Helpers\TenantHost;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
@@ -67,7 +68,7 @@ class TenantController extends Controller
             }
 
             // Check if domain exists
-            $domainName = $subdomain . '.' . config('app.domain');
+            $domainName = TenantHost::fqdn($subdomain);
             if (Domain::where('domain', $domainName)->exists()) {
                 return response()->json([
                     'message' => 'Subdomain already taken.',
@@ -254,7 +255,7 @@ class TenantController extends Controller
                         $content = view('emails.welcome', [
                             'user' => (object) ['name' => $ownerName, 'email' => $ownerEmail],
                             'tenant' => $tenantModel,
-                            'loginUrl' => 'https://'.$tenantModel->subdomain.'.'.config('app.domain').'/login',
+                            'loginUrl' => TenantHost::loginUrl((string) ($tenantModel->subdomain ?? ''), $tenantModel->id),
                         ])->render();
 
                         MailLog::logMail(

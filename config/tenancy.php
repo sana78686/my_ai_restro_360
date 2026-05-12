@@ -26,8 +26,16 @@ return [
         'my.airestro360.com',
         '127.0.0.1',
         'localhost',
-        'localhost:8000'
+        'localhost:8000',
     ],
+
+    /**
+     * Full hostname suffix for tenant sites: {subdomain}.{tenant_domain_base}
+     * Production: set TENANT_DOMAIN_BASE=airestro360.com → restaurant.airestro360.com (central stays my.airestro360.com).
+     *
+     * If unset, falls back to MAIN_DOMAIN (e.g. localhost:8000 in dev, or my.airestro360.com for legacy tenant-on-subdomain).
+     */
+    'tenant_domain_base' => env('TENANT_DOMAIN_BASE', env('MAIN_DOMAIN', env('APP_DOMAIN', 'localhost'))),
 
     /**
      * Tenancy bootstrappers are executed when tenancy is initialized.

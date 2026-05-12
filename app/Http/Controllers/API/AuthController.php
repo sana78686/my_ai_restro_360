@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Tenant;
+use App\Helpers\TenantHost;
 use App\Mail\VerifyOtpMail;
 use Illuminate\Http\Request;
 use App\Mail\PasswordResetOtp;
@@ -62,19 +63,7 @@ class AuthController extends Controller
 
     protected function buildTenantLoginUrl(Tenant $tenant): string
     {
-        $sub = (string) ($tenant->subdomain ?: $tenant->id);
-        $main = (string) config('app.main_domain', 'localhost:8000');
-        if (str_contains($main, ':')) {
-            [$host, $port] = explode(':', $main, 2);
-        } else {
-            $host = $main;
-            $port = null;
-        }
-        $scheme = request()->getScheme();
-        $tenantHost = $sub.'.'.$host;
-        $portSuffix = $port ? ':'.$port : '';
-
-        return $scheme.'://'.$tenantHost.$portSuffix.'/login';
+        return TenantHost::loginUrl((string) ($tenant->subdomain ?? ''), $tenant->id);
     }
 
     public function checkSubdomain($subdomain)

@@ -152,7 +152,7 @@
             @if($tenant ?? false)
             <div class="highlight">
                 <strong>🏪 Restaurant Name:</strong> {{ $tenant->business_name ?? 'Your Restaurant' }}<br>
-                <strong>🌐 Subdomain:</strong> <a href="https://{{ $tenant->subdomain . '.' . config('app.domain') }}" style="color:#43a047;">{{ $tenant->subdomain . '.' . config('app.domain') }}</a>
+                <strong>🌐 Subdomain:</strong> <a href="https://{{ \App\Helpers\TenantHost::fqdn($tenant->subdomain) }}" style="color:#43a047;">{{ \App\Helpers\TenantHost::fqdn($tenant->subdomain) }}</a>
             </div>
             @endif
 

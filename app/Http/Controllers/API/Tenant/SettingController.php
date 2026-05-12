@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Helpers\FileUpload;
+use App\Helpers\TenantHost;
 use App\Models\Setting;
 use App\Models\EmailSettings;
 use Illuminate\Http\Request;
@@ -561,7 +562,7 @@ public function uploadLogo(Request $request)
             $host = $tenant->domains()->orderBy('id')->value('domain');
 
             if (! $host && filled($tenant->subdomain)) {
-                $host = $tenant->subdomain.'.'.ltrim((string) config('app.domain'), '.');
+                $host = TenantHost::fqdn((string) $tenant->subdomain);
             }
 
             if ($host) {
