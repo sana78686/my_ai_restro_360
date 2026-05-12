@@ -322,6 +322,7 @@ import {
 import { Tooltip } from 'bootstrap'
 import { VueTelInput } from 'vue-tel-input'
 import TurnstileChallenge from '../../components/TurnstileChallenge.vue'
+import { isTurnstileEnabled } from '../../utils/turnstile.js'
 
 export default {
   name: 'TenantRegister',
@@ -336,9 +337,7 @@ export default {
     const loading = ref(false)
     const turnstileRegisterRef = ref(null)
     const tsRegisterToken = ref('')
-    const turnstileOn = computed(
-      () => typeof window !== 'undefined' && !!window.TURNSTILE_SITE_KEY
-    )
+    const turnstileOn = computed(() => isTurnstileEnabled())
 
     function onRegisterTsToken (token) {
       tsRegisterToken.value = token || ''

@@ -170,6 +170,7 @@ import Swal from 'sweetalert2'
 import { logTenantOtpFromTableIfPending } from '../../utils/tenantOtpFromTable'
 import RestroInfoTip from '../../components/frontend/RestroInfoTip.vue'
 import TurnstileChallenge from '../../components/TurnstileChallenge.vue'
+import { isTurnstileEnabled } from '../../utils/turnstile.js'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -194,9 +195,7 @@ const turnstileOtpRef = ref(null)
 const tsLoginToken = ref('')
 const tsOtpToken = ref('')
 
-const turnstileEnabled = computed(
-  () => typeof window !== 'undefined' && !!window.TURNSTILE_SITE_KEY
-)
+const turnstileEnabled = computed(() => isTurnstileEnabled())
 
 function onTsLoginToken (token) {
   tsLoginToken.value = token || ''

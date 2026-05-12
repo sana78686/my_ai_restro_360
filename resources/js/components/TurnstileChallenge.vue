@@ -5,10 +5,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { getTurnstileSiteKey } from '../utils/turnstile.js'
 
 defineProps({
-  /** Useful for debugging only */
   actionKey: {
     type: String,
     default: 'default',
@@ -18,7 +18,8 @@ defineProps({
 const emit = defineEmits(['token', 'expire', 'fail'])
 
 const hostEl = ref(null)
-const siteKey = typeof window !== 'undefined' && window.TURNSTILE_SITE_KEY ? window.TURNSTILE_SITE_KEY : ''
+/** Resolved at runtime so Blade + VITE_* both work */
+const siteKey = ref('')
 
 let widgetId = null
 
@@ -37,10 +38,11 @@ function loadScript () {
 }
 
 function renderWidget () {
-  if (!siteKey || !hostEl.value || !window.turnstile) return
+  const key = siteKey.value
+  if (!key || !hostEl.value || !window.turnstile) return
   hostEl.value.innerHTML = ''
   widgetId = window.turnstile.render(hostEl.value, {
-    sitekey: siteKey,
+    sitekey: key,
     callback: (token) => emit('token', token),
     'expired-callback': () => emit('expire'),
     'error-callback': () => emit('fail'),
@@ -48,9 +50,11 @@ function renderWidget () {
 }
 
 onMounted(async () => {
-  if (!siteKey) return
+  siteKey.value = getTurnstileSiteKey()
+  if (!siteKey.value) return
   try {
     await loadScript()
+    await nextTick()
     renderWidget()
   } catch {
     emit('fail')
@@ -69,11 +73,13 @@ onBeforeUnmount(() => {
 })
 
 function reset () {
+  siteKey.value = getTurnstileSiteKey()
+  if (!siteKey.value) return
   if (widgetId != null && window.turnstile?.reset) {
     window.turnstile.reset(widgetId)
     return
   }
-  renderWidget()
+  void nextTick(() => renderWidget())
 }
 
 defineExpose({ reset })

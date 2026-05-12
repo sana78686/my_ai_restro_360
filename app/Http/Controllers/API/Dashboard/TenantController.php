@@ -19,7 +19,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SubscriptionVerifiedMail;
 use Illuminate\Support\Facades\Validator;
+use App\Helpers\TenantHost;
 use App\Helpers\FileUpload;
+use App\Mail\OwnerAccountApprovedMail;
 use Stripe\Customer;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -352,6 +354,13 @@ class TenantController extends Controller
             'account_verification_token' => null,
             'account_verification_token_expires_at' => null,
         ]);
+
+        $loginUrl = TenantHost::loginUrl((string) ($tenant->subdomain ?? ''), (string) $tenant->id);
+        try {
+            Mail::to($tenant->owner_email)->send(new OwnerAccountApprovedMail($tenant, $loginUrl));
+        } catch (\Throwable $e) {
+            Log::error('Owner approval email failed: '.$e->getMessage());
+        }
 
         return response()->json([
             'success' => true,

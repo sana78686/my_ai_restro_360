@@ -310,6 +310,15 @@
                 {{ submitError }}
               </p>
 
+              <TurnstileChallenge
+                v-if="turnstileActive"
+                ref="turnstileLeadRef"
+                action-key="home-lead-register"
+                @token="onLeadTurnstileToken"
+                @expire="onLeadTurnstileExpire"
+                @fail="onLeadTurnstileExpire"
+              />
+
               <button type="submit" class="restro-form__submit" :disabled="submitting">
                 {{ submitting ? '…' : $t('home.landing.getStarted') }}
               </button>
@@ -352,6 +361,8 @@ import { computed, defineAsyncComponent, nextTick, reactive, ref, watch } from '
 import { useI18n } from 'vue-i18n'
 import { useGoogleRestaurantField } from '../../composables/useGoogleRestaurantField.js'
 import RestroCountryCardField from '../../components/frontend/RestroCountryCardField.vue'
+import TurnstileChallenge from '../../components/TurnstileChallenge.vue'
+import { isTurnstileEnabled } from '../../utils/turnstile.js'
 import { PHONE_COUNTRIES } from '../../data/phoneCountries.js'
 
 const RestroSearchSelect = defineAsyncComponent(() => import('../../components/frontend/RestroSearchSelect.vue'))
@@ -366,6 +377,17 @@ const showPostRegisterPending = ref(false)
 const postRegisterLoginUrl = ref('')
 const submitError = ref('')
 const submitInfo = ref('')
+const turnstileLeadRef = ref(null)
+const tsLeadToken = ref('')
+
+const turnstileActive = computed(() => isTurnstileEnabled())
+
+function onLeadTurnstileToken (token) {
+  tsLeadToken.value = token || ''
+}
+function onLeadTurnstileExpire () {
+  tsLeadToken.value = ''
+}
 
 function scrollIntoFormAndFocus (el) {
   if (!el) return
@@ -724,6 +746,12 @@ async function onSubmit () {
     return
   }
 
+  if (turnstileActive.value && !tsLeadToken.value) {
+    submitError.value = t('auth.turnstile.required')
+    nextTick(() => focusById('restro-form-server-msg'))
+    return
+  }
+
   submitting.value = true
   try {
     isBuilding.value = true
@@ -749,6 +777,9 @@ async function onSubmit () {
       }
     }
     submitData.message = `${t('home.landing.leadNoteLabel')}:\n${buildLeadMessage()}`
+    if (tsLeadToken.value) {
+      submitData.turnstile_token = tsLeadToken.value
+    }
 
     const { data } = await window.axios.post('/tenants/register', submitData, {
       timeout: 300000,
@@ -772,6 +803,8 @@ async function onSubmit () {
     }
   } catch (e) {
     isBuilding.value = false
+    tsLeadToken.value = ''
+    turnstileLeadRef.value?.reset()
     submitInfo.value = ''
     const data = e?.response?.data
     const msg = data?.message

@@ -135,6 +135,7 @@ import { useRoute, useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
 import RestroInfoTip from '../../components/frontend/RestroInfoTip.vue'
 import TurnstileChallenge from '../../components/TurnstileChallenge.vue'
+import { isTurnstileEnabled } from '../../utils/turnstile.js'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -150,9 +151,7 @@ const turnstilePwRef = ref(null)
 const tsEmailToken = ref('')
 const tsPwToken = ref('')
 
-const turnstileEnabled = computed(
-  () => typeof window !== 'undefined' && !!window.TURNSTILE_SITE_KEY
-)
+const turnstileEnabled = computed(() => isTurnstileEnabled())
 
 function onTsEmailToken (token) {
   tsEmailToken.value = token || ''
