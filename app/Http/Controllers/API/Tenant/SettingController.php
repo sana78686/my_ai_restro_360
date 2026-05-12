@@ -392,26 +392,26 @@ public function uploadLogo(Request $request)
             $previousPath = $setting->getFirstMedia('logo')?->getCustomProperty('s3_path');
         }
 
-        // Upload to S3
+        // Upload to S3 (FileUpload consumes the temp file — do not use addMediaFromRequest after)
         $result = FileUpload::upload($file, 'logos', $previousPath, true);
         $path = $result['paths'][0] ?? null;
         $url = $result['urls'][0] ?? null;
 
-        if (!$path || !$url) {
+        if (! $path || ! $url) {
             return response()->json(['success' => false, 'message' => 'Failed to store file'], 500);
         }
+
+        $normalized = str_replace('\\', '/', $path);
 
         // Remove existing logo media
         $setting->clearMediaCollection('logo');
 
-        // Add new media - use the correct approach
-        $media = $setting
-            ->addMediaFromRequest('logo') // Use the uploaded file directly
-            ->usingFileName($file->getClientOriginalName())
+        $media = $setting->addMediaFromDisk($normalized, 's3')
+            ->usingFileName(basename($normalized))
             ->toMediaCollection('logo', 's3');
 
         // Set custom properties
-        $media->setCustomProperty('s3_path', $path);
+        $media->setCustomProperty('s3_path', $normalized);
         $media->setCustomProperty('public_url', $url);
         $media->save();
 

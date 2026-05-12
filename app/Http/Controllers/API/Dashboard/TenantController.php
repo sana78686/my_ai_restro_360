@@ -18,8 +18,8 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SubscriptionVerifiedMail;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use App\Helpers\FileUpload;
 use Stripe\Customer;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -150,16 +150,18 @@ class TenantController extends Controller
             ], 422);
         }
     
-        $data = $validator->validated();
-    
-        // Handle logo upload
-        if ($request->hasFile('logo')) {
-            $path = $request->file('logo')->store('tenants', 'public');
-            $data['logo'] = $path;
-        }
-    
+        $data = collect($validator->validated())->except(['logo'])->all();
+
         // ✅ Create Tenant
         $tenant = Tenant::create($data);
+
+        if ($request->hasFile('logo')) {
+            $result = FileUpload::upload($request->file('logo'), 'tenant_logos', null, true, (string) $tenant->id);
+            if (! empty($result['paths'][0])) {
+                $tenant->logo = $result['paths'][0];
+                $tenant->save();
+            }
+        }
     
        
             // ✅ Create Stripe Customer
@@ -273,12 +275,8 @@ class TenantController extends Controller
         $data = $validator->validated();
 
         if ($request->hasFile('logo')) {
-            // Delete old logo if exists
-            if ($tenant->logo) {
-                Storage::disk('public')->delete($tenant->logo);
-            }
-            $path = $request->file('logo')->store('tenants', 'public');
-            $data['logo'] = $path;
+            $result = FileUpload::upload($request->file('logo'), 'tenant_logos', $tenant->logo, true, (string) $tenant->id);
+            $data['logo'] = $result['paths'][0] ?? $tenant->logo;
         }
 
         $tenant->update($data);
@@ -292,9 +290,7 @@ class TenantController extends Controller
 
     public function destroy(Tenant $tenant)
     {
-        if ($tenant->logo) {
-            Storage::disk('public')->delete($tenant->logo);
-        }
+        FileUpload::deleteStored($tenant->logo);
 
         $tenant->delete();
 

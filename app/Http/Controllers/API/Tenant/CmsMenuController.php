@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\Tenant;
 
+use App\Helpers\FileUpload;
 use App\Http\Controllers\Controller;
 use App\Models\CMS;
 use Illuminate\Http\Request;
@@ -265,9 +266,11 @@ class CmsMenuController extends Controller
 		]);
 
 		try {
-			$imageName = time() . '.' . $request->image->extension();
-			$request->image->move(public_path('uploads/cms_images'), $imageName);
-			$imageUrl = asset('uploads/cms_images/' . $imageName);
+			$result = FileUpload::upload($request->file('image'), 'cms_menu');
+			$imageUrl = $result['urls'][0] ?? null;
+			if (! $imageUrl) {
+				return response()->json(['message' => 'Image upload failed.'], 500);
+			}
 
 			return response()->json(['url' => $imageUrl]);
 		} catch (\Exception $e) {

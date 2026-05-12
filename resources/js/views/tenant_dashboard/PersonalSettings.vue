@@ -338,9 +338,9 @@ async function updateProfile() {
       if (profileForm.value.address) fd.append('address', profileForm.value.address)
       fd.append('profile_photo', pendingPhoto.value)
 
+      // Do not set Content-Type — axios must add multipart boundary automatically
       const response = await axios.post('/tenant/profile', fd, {
         withCredentials: true,
-        headers: { 'Content-Type': 'multipart/form-data' },
       })
       pendingPhoto.value = null
       if (response.data.success) {

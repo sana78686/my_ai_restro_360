@@ -1242,7 +1242,7 @@ export default {
                     await axios.post(
                         `/tenant/products/${form.value.id}?_method=PUT`,
                         fd,
-                        { headers: { "Content-Type": "multipart/form-data" } }
+                        { withCredentials: true }
                     );
                     Swal.fire({ 
                         icon: "success", 
@@ -1250,7 +1250,7 @@ export default {
                     });
                 } else {
                     await axios.post("/tenant/products", fd, {
-                        headers: { "Content-Type": "multipart/form-data" },
+                        withCredentials: true,
                     });
                     Swal.fire({ 
                         icon: "success", 
@@ -1825,7 +1825,7 @@ export default {
                     await axios.post(
                         `/tenant/products/${form.value.id}?_method=PUT`,
                         fd,
-                        { headers: { "Content-Type": "multipart/form-data" } }
+                        { withCredentials: true }
                     );
                     Swal.fire({ 
                         icon: "success", 
@@ -1833,7 +1833,7 @@ export default {
                     });
                 } else {
                     await axios.post("/tenant/products", fd, {
-                        headers: { "Content-Type": "multipart/form-data" },
+                        withCredentials: true,
                     });
                     Swal.fire({ 
                         icon: "success", 

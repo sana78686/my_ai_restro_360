@@ -201,17 +201,14 @@ return [
     /**
      * Parameters used by the tenants:migrate command.
      *
-     * Optional: place a dump at database/schema/tenant-schema.sql (MySQL) to load the
-     * baseline schema in one shot; Laravel will then run only migrations newer than the dump.
-     * Generate from a fully migrated tenant DB (mysqldump) or see Laravel schema dump docs.
+     * Baseline schema is loaded by App\Jobs\Tenant\FastMigrateDatabase (PDO) before migrate
+     * when database/schema/tenant-schema.sql exists — see php artisan tenancy:dump-tenant-schema.
      */
-    'migration_parameters' => array_merge([
+    'migration_parameters' => [
         '--force' => true, // This needs to be true to run migrations in production.
         '--path' => [database_path('migrations/tenant')],
         '--realpath' => true,
-    ], is_file(database_path('schema/tenant-schema.sql')) ? [
-        '--schema-path' => database_path('schema/tenant-schema.sql'),
-    ] : []),
+    ],
 
     /**
      * Parameters used by the tenants:seed command.

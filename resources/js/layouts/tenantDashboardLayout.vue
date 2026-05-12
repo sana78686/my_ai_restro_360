@@ -1825,7 +1825,7 @@ export default {
 .td-content {
   min-width: 0;
   min-height: 0;
-  background: #fff;
+  background: #f1f1f1;
   border-radius: 0;
   box-shadow: none;
   margin-left: 0;

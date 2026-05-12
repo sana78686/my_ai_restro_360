@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\API\Tenant;
 
+use App\Helpers\FileUpload;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
@@ -24,12 +23,7 @@ class ProfileController extends Controller
         $roleName = $roles->first();
         $roleDisplay = $roleName ? ucwords(str_replace('_', ' ', (string) $roleName)) : 'Member';
 
-        $avatarUrl = null;
-        if ($user->profile_photo) {
-            $avatarUrl = Str::startsWith($user->profile_photo, ['http://', 'https://'])
-                ? $user->profile_photo
-                : Storage::disk('public')->url($user->profile_photo);
-        }
+        $avatarUrl = FileUpload::urlForStored($user->profile_photo);
 
         return response()->json([
             'success' => true,
@@ -73,21 +67,19 @@ class ProfileController extends Controller
             $user->fill($data);
 
             if ($request->hasFile('profile_photo')) {
-                if ($user->profile_photo && ! Str::startsWith($user->profile_photo, ['http://', 'https://'])) {
-                    Storage::disk('public')->delete($user->profile_photo);
+                $result = FileUpload::upload($request->file('profile_photo'), 'profile-photos', $user->profile_photo, true);
+                if (empty($result['paths'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Photo could not be uploaded. Check AWS S3 settings (bucket, region, credentials) and try again.',
+                    ], 500);
                 }
-                $path = $request->file('profile_photo')->store('profile-photos', 'public');
-                $user->profile_photo = $path;
+                $user->profile_photo = $result['paths'][0];
             }
 
             $user->save();
 
-            $avatarUrl = null;
-            if ($user->profile_photo) {
-                $avatarUrl = Str::startsWith($user->profile_photo, ['http://', 'https://'])
-                    ? $user->profile_photo
-                    : Storage::disk('public')->url($user->profile_photo);
-            }
+            $avatarUrl = FileUpload::urlForStored($user->profile_photo);
 
             return response()->json([
                 'success' => true,

@@ -8,8 +8,8 @@ use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Helpers\FileUpload;
 use App\Mail\NewTenantNotification;
 use App\Mail\WelcomeTenant;
 use Spatie\Permission\Models\Role;
@@ -44,11 +44,13 @@ class RegisterController extends Controller
                 'place_id' => $request->place_id
             ]);
 
-            // Handle logo upload
+            // Handle logo upload (S3)
             if ($request->hasFile('logo')) {
-                $path = $request->file('logo')->store('tenant_logos', 'public');
-                $tenant->logo = $path;
-                $tenant->save();
+                $result = FileUpload::upload($request->file('logo'), 'tenant_logos', null, true, (string) $tenant->id);
+                if (! empty($result['paths'][0])) {
+                    $tenant->logo = $result['paths'][0];
+                    $tenant->save();
+                }
             }
 
             // Create user

@@ -48,7 +48,19 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
-        
+
+        $caBundle = env('AWS_CA_BUNDLE');
+        $caBundlePath = '';
+        if (is_string($caBundle) && $caBundle !== '' && is_readable($caBundle)) {
+            $caBundlePath = $caBundle;
+        } elseif (is_readable(storage_path('app/aws-cacert.pem'))) {
+            $caBundlePath = storage_path('app/aws-cacert.pem');
+        }
+        if ($caBundlePath !== '') {
+            /** @see https://docs.aws.amazon.com/sdk-for-php/v3/developer-guide/guide_configuration.html#configuring-a-custom-ca-bundle */
+            putenv('AWS_CA_BUNDLE='.$caBundlePath);
+        }
+
         // Share app name with app.blade.php view
         View::composer('app', function ($view) {
             $view->with('appName', AppNameHelper::getAppName());

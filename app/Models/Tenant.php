@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Helpers\FileUpload;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
@@ -73,8 +74,10 @@ class Tenant extends BaseTenant implements TenantWithDatabase, HasMedia
             'subscription_ends_at',
             'account_verification_token',
             'account_verification_token_expires_at',
+            'logo',
         ];
     }
+
     public function getDatabaseName(): string
     {
         return $this->database_name;
@@ -111,7 +114,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase, HasMedia
 
     public function getLogoUrlAttribute()
     {
-        return $this->logo ? asset('storage/' . $this->logo) : null;
+        return FileUpload::urlForStored($this->logo);
     }
     
     public function getDomain(): string

@@ -1424,15 +1424,9 @@ export default {
             formData.append("logo", file);
 
             try {
-                const response = await axios.post(
-                    "/tenant/upload-logo",
-                    formData,
-                    {
-                        headers: {
-                            "Content-Type": "multipart/form-data",
-                        },
-                    }
-                );
+                const response = await axios.post("/tenant/upload-logo", formData, {
+                    withCredentials: true,
+                });
 
                 if (response.data.success) {
                     await fetchSettings();
