@@ -75,6 +75,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase, HasMedia
             'account_verification_token',
             'account_verification_token_expires_at',
             'logo',
+            'theme',
         ];
     }
 

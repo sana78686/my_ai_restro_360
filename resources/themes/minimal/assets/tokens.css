@@ -1,0 +1,80 @@
+/**
+ * Minimal Theme Design Tokens
+ * 
+ * Clean, zen-like aesthetic with generous whitespace.
+ */
+
+:root {
+    /* ===== Colors ===== */
+    --theme-primary: #2d2d2d;          /* Soft black */
+    --theme-primary-hover: #1a1a1a;
+    --theme-primary-light: #f7f7f7;
+    
+    --theme-secondary: #4a7c59;        /* Muted sage green */
+    --theme-secondary-hover: #3d6649;
+    
+    --theme-accent: #c9a959;           /* Warm gold */
+    --theme-accent-hover: #b89944;
+    
+    --theme-text: #2d2d2d;
+    --theme-text-muted: #757575;
+    --theme-text-light: #a0a0a0;
+    
+    --theme-bg: #fefefe;               /* Warm white */
+    --theme-bg-alt: #f9f9f9;
+    --theme-bg-dark: #2d2d2d;
+    
+    --theme-border: #e8e8e8;
+    --theme-border-light: #f2f2f2;
+    
+    /* ===== Typography ===== */
+    --theme-font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --theme-font-family-heading: 'DM Serif Display', Georgia, serif;
+    
+    --theme-font-size-xs: 0.75rem;
+    --theme-font-size-sm: 0.875rem;
+    --theme-font-size-base: 1rem;
+    --theme-font-size-lg: 1.125rem;
+    --theme-font-size-xl: 1.25rem;
+    --theme-font-size-2xl: 1.75rem;
+    --theme-font-size-3xl: 2.5rem;
+    
+    --theme-font-weight-normal: 400;
+    --theme-font-weight-medium: 500;
+    --theme-font-weight-semibold: 500;  /* Less bold for minimal */
+    --theme-font-weight-bold: 600;
+    
+    --theme-line-height: 1.8;           /* More generous line height */
+    --theme-line-height-tight: 1.3;
+    
+    /* ===== Spacing ===== */
+    --theme-space-xs: 0.5rem;
+    --theme-space-sm: 1rem;
+    --theme-space-md: 1.5rem;
+    --theme-space-lg: 2.5rem;
+    --theme-space-xl: 4rem;
+    --theme-space-2xl: 6rem;            /* Very generous spacing */
+    
+    /* ===== Border Radius ===== */
+    --theme-radius-sm: 2px;             /* Very subtle rounding */
+    --theme-radius-md: 4px;
+    --theme-radius-lg: 6px;
+    --theme-radius-xl: 8px;
+    --theme-radius-full: 9999px;
+    
+    /* ===== Shadows ===== */
+    --theme-shadow-sm: none;            /* No shadows for minimal */
+    --theme-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --theme-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.06);
+    --theme-shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.08);
+    
+    /* ===== Transitions ===== */
+    --theme-transition-fast: 150ms ease-out;
+    --theme-transition-normal: 250ms ease-out;
+    --theme-transition-slow: 400ms ease-out;
+    
+    /* ===== Layout ===== */
+    --theme-container-max: 1000px;      /* Narrower, focused content */
+    --theme-header-height: 60px;        /* Slimmer header */
+    --theme-footer-height: auto;
+}

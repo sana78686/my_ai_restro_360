@@ -9,6 +9,7 @@
 
     <script>
         window.TURNSTILE_SITE_KEY = @json(config('turnstile.site_key'));
+        window.TENANT_THEME = @json(tenant('theme') ?? 'classic');
     </script>
 
     <!-- Scripts -->

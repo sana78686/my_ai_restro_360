@@ -1,0 +1,92 @@
+/**
+ * Classic Theme Design Tokens
+ * 
+ * CSS custom properties that define the visual identity of this theme.
+ * Override these in other themes to change the look without touching components.
+ */
+
+:root {
+    /* ===== Colors ===== */
+    --theme-primary: #dc3545;          /* Restaurant red - CTAs, highlights */
+    --theme-primary-hover: #c82333;
+    --theme-primary-light: #f8d7da;
+    
+    --theme-secondary: #28a745;        /* Success green */
+    --theme-secondary-hover: #218838;
+    
+    --theme-accent: #ffc107;           /* Warm amber - badges, alerts */
+    --theme-accent-hover: #e0a800;
+    
+    --theme-text: #212529;             /* Body text */
+    --theme-text-muted: #6c757d;       /* Secondary text */
+    --theme-text-light: #adb5bd;       /* Placeholder text */
+    
+    --theme-bg: #ffffff;               /* Page background */
+    --theme-bg-alt: #f8f9fa;           /* Cards, sections */
+    --theme-bg-dark: #343a40;          /* Footer, dark sections */
+    
+    --theme-border: #dee2e6;           /* Borders */
+    --theme-border-light: #e9ecef;
+    
+    /* ===== Typography ===== */
+    --theme-font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --theme-font-family-heading: 'Poppins', sans-serif;
+    
+    --theme-font-size-xs: 0.75rem;     /* 12px */
+    --theme-font-size-sm: 0.875rem;    /* 14px */
+    --theme-font-size-base: 1rem;      /* 16px */
+    --theme-font-size-lg: 1.125rem;    /* 18px */
+    --theme-font-size-xl: 1.25rem;     /* 20px */
+    --theme-font-size-2xl: 1.5rem;     /* 24px */
+    --theme-font-size-3xl: 2rem;       /* 32px */
+    
+    --theme-font-weight-normal: 400;
+    --theme-font-weight-medium: 500;
+    --theme-font-weight-semibold: 600;
+    --theme-font-weight-bold: 700;
+    
+    --theme-line-height: 1.6;
+    --theme-line-height-tight: 1.25;
+    
+    /* ===== Spacing ===== */
+    --theme-space-xs: 0.25rem;         /* 4px */
+    --theme-space-sm: 0.5rem;          /* 8px */
+    --theme-space-md: 1rem;            /* 16px */
+    --theme-space-lg: 1.5rem;          /* 24px */
+    --theme-space-xl: 2rem;            /* 32px */
+    --theme-space-2xl: 3rem;           /* 48px */
+    
+    /* ===== Border Radius ===== */
+    --theme-radius-sm: 4px;
+    --theme-radius-md: 8px;
+    --theme-radius-lg: 12px;
+    --theme-radius-xl: 16px;
+    --theme-radius-full: 9999px;
+    
+    /* ===== Shadows ===== */
+    --theme-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --theme-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --theme-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --theme-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+    
+    /* ===== Transitions ===== */
+    --theme-transition-fast: 150ms ease;
+    --theme-transition-normal: 250ms ease;
+    --theme-transition-slow: 350ms ease;
+    
+    /* ===== Layout ===== */
+    --theme-container-max: 1200px;
+    --theme-header-height: 70px;
+    --theme-footer-height: auto;
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+    :root.theme-auto {
+        --theme-text: #f8f9fa;
+        --theme-text-muted: #adb5bd;
+        --theme-bg: #212529;
+        --theme-bg-alt: #343a40;
+        --theme-border: #495057;
+    }
+}
