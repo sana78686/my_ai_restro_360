@@ -1123,6 +1123,15 @@ export default {
 
     // Tenants
     tenants: {
+        pageTitle: 'Restaurantverwaltung',
+        approveOwnerDialog: {
+            title: 'Restaurantinhaber verifizieren?',
+            text: 'Der Inhaber kann sich ohne E-Mail-OTP anmelden. Eine Bestätigungs-E-Mail wird an seine Adresse gesendet.',
+            confirm: 'Ja, verifizieren',
+            cancel: 'Abbrechen',
+        },
+        approveOwnerSuccess:
+            'Inhaber verifiziert. Eine Bestätigungs-E-Mail wurde an den Restaurantinhaber gesendet.',
         list: {
             title: 'Restaurants',
             name: 'Name',

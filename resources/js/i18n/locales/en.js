@@ -1192,6 +1192,15 @@ export default {
 
     // Tenants
     tenants: {
+        pageTitle: 'Restaurant Management',
+        approveOwnerDialog: {
+            title: 'Verify restaurant owner?',
+            text: 'The owner can sign in without email OTP. A confirmation email will be sent to their address.',
+            confirm: 'Yes, verify',
+            cancel: 'Cancel',
+        },
+        approveOwnerSuccess:
+            'Owner verified. A confirmation email has been sent to the restaurant owner.',
         list: {
             title: 'Restaurants',
             name: 'Name',

@@ -149,7 +149,7 @@ export default {
         case 'dashboard':
           return t('dashboard')
         case 'tenants':
-          return t('tenants')
+          return t('tenants.pageTitle')
         case 'users':
           return t('users')
         case 'roles':
@@ -362,6 +362,7 @@ export default {
   color: #111827;
   font-weight: 600;
   font-size: 1.125rem;
+  overflow-wrap: anywhere;
 }
 
 .top-nav-right {

@@ -111,7 +111,7 @@ const routes = [
       {
         path: 'tenants',
         name: 'tenants',
-        meta: { title: 'Tenants' },
+        meta: { i18nTitle: 'tenants.pageTitle' },
         component: () => import('../views/dashboard/Tenants.vue')
       },
       {
@@ -173,10 +173,11 @@ router.afterEach(async (to) => {
 
   // Collect titles from all matched routes (parents + child)
   const titleParts = to.matched
-    .filter(record => record.meta && record.meta.title)
+    .filter(record => record.meta && (record.meta.i18nTitle || record.meta.title))
     .map(record => {
-      // If using i18n, translate here:
-      // return i18n.global.t(record.meta.title)
+      if (record.meta.i18nTitle) {
+        return i18n.global.t(record.meta.i18nTitle)
+      }
       return record.meta.title
     })
 
