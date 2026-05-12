@@ -1129,6 +1129,9 @@ export default {
             ownerLogin: 'Inhaber-Login',
             approveOwner: 'Inhaber freigeben',
             ownerApproved: 'Freigegeben',
+            verification: 'Verifizierung',
+            needVerification: 'Verifizierung erforderlich',
+            ownerVerified: 'Verifiziert',
             actions: 'Aktionen'
         },
         status: {

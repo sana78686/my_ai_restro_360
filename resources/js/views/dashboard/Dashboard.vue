@@ -167,6 +167,7 @@
                                         <th>{{ $t("tenants.list.name") }}</th>
                                         <th>{{ $t("tenants.list.owner") }}</th>
                                         <th>{{ $t("tenants.list.status") }}</th>
+                                        <th>{{ $t("tenants.list.verification") }}</th>
                                         <th>{{ $t("common.actions") }}</th>
                                     </tr>
                                 </thead>
@@ -187,6 +188,25 @@
                                             <span class="badge" :class="getStatusBadgeClass(tenant.status)">
                                                 {{ tenant.status }}
                                             </span>
+                                        </td>
+                                        <td>
+                                            <button
+                                                v-if="tenant.owner_account_approved"
+                                                type="button"
+                                                class="btn btn-sm dash-verify dash-verify--ok"
+                                                disabled
+                                            >
+                                                {{ $t("tenants.list.ownerVerified") }}
+                                            </button>
+                                            <button
+                                                v-else
+                                                type="button"
+                                                class="btn btn-sm dash-verify dash-verify--pending"
+                                                :disabled="verifyingTenantId === tenant.id"
+                                                @click="approveOwnerAccount(tenant)"
+                                            >
+                                                {{ $t("tenants.list.needVerification") }}
+                                            </button>
                                         </td>
                                         <td>
                                             <div class="btn-group">
@@ -218,7 +238,7 @@
                                         </td>
                                     </tr>
                                     <tr v-if="!filteredRecentTenants.length">
-                                        <td colspan="4" class="text-muted py-4 text-center">—</td>
+                                        <td colspan="5" class="text-muted py-4 text-center">—</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -348,6 +368,7 @@ export default {
         const recentTenants = ref([]);
         const loading = ref(true);
         const error = ref(null);
+        const verifyingTenantId = ref(null);
 
         const healthScore = computed(() => {
             const t = stats.value.totalTenants || 0;
@@ -434,7 +455,13 @@ export default {
                 const name = (t.name || "").toLowerCase();
                 const owner = (t.owner_name || "").toLowerCase();
                 const st = (t.status || "").toLowerCase();
-                return name.includes(q) || owner.includes(q) || st.includes(q);
+                const verifyLabel = t.owner_account_approved ? "verified" : "verification";
+                return (
+                    name.includes(q) ||
+                    owner.includes(q) ||
+                    st.includes(q) ||
+                    verifyLabel.includes(q)
+                );
             });
         });
 
@@ -448,10 +475,7 @@ export default {
                 }
                 const tenantsRes = await axios.get("/dashboard/recent-tenants");
                 if (tenantsRes.data && tenantsRes.data.data) {
-                    const today = new Date().toISOString().slice(0, 10);
-                    recentTenants.value = tenantsRes.data.data.filter(
-                        (t) => t.created_at && t.created_at.slice(0, 10) === today
-                    );
+                    recentTenants.value = tenantsRes.data.data;
                 }
             } catch (err) {
                 error.value = "Failed to load dashboard data.";
@@ -559,6 +583,38 @@ export default {
             }
         };
 
+        const approveOwnerAccount = async (tenant) => {
+            const result = await Swal.fire({
+                title: "Approve owner?",
+                text: "They can sign in without waiting for email verification.",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Yes, verify",
+                cancelButtonText: "Cancel",
+            });
+            if (!result.isConfirmed) return;
+            verifyingTenantId.value = tenant.id;
+            try {
+                await axios.post(`/dashboard/tenants/${tenant.id}/approve-account`);
+                await fetchDashboardData();
+                Swal.fire({
+                    icon: "success",
+                    title: "Verified",
+                    text: "Owner account approved.",
+                });
+            } catch (e) {
+                console.error("Error approving owner:", e);
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text:
+                        e.response?.data?.message || "Failed to approve owner account.",
+                });
+            } finally {
+                verifyingTenantId.value = null;
+            }
+        };
+
         const clearCache = async () => {
             try {
                 await axios.post("/clear-cache");
@@ -604,6 +660,8 @@ export default {
             approveTenant,
             suspendTenant,
             activateTenant,
+            approveOwnerAccount,
+            verifyingTenantId,
             clearCache,
         };
     },
@@ -1073,5 +1131,36 @@ export default {
     height: 30px;
     object-fit: cover;
     border-radius: 6px;
+}
+
+.dash-verify {
+    font-weight: 600;
+    white-space: nowrap;
+    border-radius: 999px;
+    padding: 0.28rem 0.85rem;
+    min-width: 8.25rem;
+}
+
+.dash-verify--ok {
+    background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+    border: 1px solid #15803d;
+    color: #fff !important;
+    opacity: 1;
+    cursor: default;
+}
+
+.dash-verify--ok:disabled {
+    opacity: 1;
+}
+
+.dash-verify--pending {
+    border: 1px solid #d97706;
+    color: #b45309;
+    background: #fffbeb;
+}
+
+.dash-verify--pending:hover:not(:disabled) {
+    background: #fef3c7;
+    color: #92400e;
 }
 </style>

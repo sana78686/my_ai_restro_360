@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -18,23 +19,42 @@ class DashboardController extends Controller
 {
     public function getRecentTenants()
     {
-        $tenants = \App\Models\Tenant::orderBy('created_at', 'desc')->take(5)->get();
-        Log::info('Tenants:', ['tenants' => $tenants]);
-        return response()->json([
-            'success' => true,
-            'data' => $tenants
-        ]);
-        $data = $tenants->map(function($tenant) {
-            return [
+        $tenants = Tenant::query()->orderBy('created_at', 'desc')->take(5)->get();
+        $tenantData = [];
+        foreach ($tenants as $tenant) {
+            $ownerApproved = false;
+            $logoUrl = null;
+            try {
+                tenancy()->initialize($tenant);
+                $logoUrl = DB::table('media')
+                    ->where('model_type', 'App\\Models\\Setting')
+                    ->value('custom_properties->public_url');
+                $ownerUser = User::query()->where('email', $tenant->owner_email)->first();
+                $ownerApproved = $ownerUser && $ownerUser->is_verified_by_admin;
+            } catch (\Throwable $e) {
+                Log::error("getRecentTenants: tenant {$tenant->id}: ".$e->getMessage());
+            } finally {
+                tenancy()->end();
+            }
+
+            $resolvedLogo = $logoUrl ?: $tenant->logo_url;
+            $tenantData[] = [
                 'id' => $tenant->id,
                 'name' => $tenant->name,
                 'owner_name' => $tenant->owner_name,
                 'owner_email' => $tenant->owner_email,
                 'status' => $tenant->status,
-                'logo' => $tenant->logo_url,
+                'logo' => $resolvedLogo,
+                'logo_url' => $resolvedLogo,
                 'created_at' => $tenant->created_at,
+                'owner_account_approved' => $ownerApproved,
             ];
-        });
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $tenantData,
+        ]);
     }
     public function getStats()
     {

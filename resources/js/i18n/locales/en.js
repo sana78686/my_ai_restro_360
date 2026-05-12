@@ -1198,6 +1198,9 @@ export default {
             ownerLogin: 'Owner login',
             approveOwner: 'Approve owner',
             ownerApproved: 'Approved',
+            verification: 'Verification',
+            needVerification: 'Need verification',
+            ownerVerified: 'Verified',
             actions: 'Actions'
         },
         status: {
