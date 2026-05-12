@@ -1,9 +1,46 @@
 import { createI18n } from 'vue-i18n';
 import en from './locales/en';
-import de from './locales/de';
+import arPatch from './locales/ar';
 
-// Get the stored language or default to English
-const storedLang = localStorage.getItem('language') || 'en';
+/**
+ * Deep-merge locale patch onto base (e.g. Arabic over English for translated keys only).
+ */
+function deepMerge (base, patch) {
+    if (base === undefined || base === null) {
+        return patch
+    }
+    if (patch === undefined || patch === null) {
+        return base
+    }
+    if (Array.isArray(base) || Array.isArray(patch)) {
+        return patch
+    }
+    if (typeof base !== 'object' || typeof patch !== 'object') {
+        return patch
+    }
+    const out = { ...base }
+    for (const k of Object.keys(patch)) {
+        out[k] = deepMerge(base[k], patch[k])
+    }
+    return out
+}
+
+let storedLang = localStorage.getItem('language') || 'en'
+// Legacy: German locale removed — migrate saved preference to English
+if (storedLang === 'de') {
+    storedLang = 'en'
+    localStorage.setItem('language', 'en')
+}
+
+const ar = deepMerge(en, arPatch)
+
+export function applyDocumentLocale (lang) {
+    if (typeof document === 'undefined') {
+        return
+    }
+    document.documentElement.lang = lang
+    document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr')
+}
 
 const i18n = createI18n({
     legacy: false,
@@ -11,25 +48,18 @@ const i18n = createI18n({
     fallbackLocale: 'en',
     messages: {
         en,
-        de
+        ar
     }
-});
+})
+
+applyDocumentLocale(storedLang)
 
 export default i18n;
-
-// Helper function to change language
-// export const setLanguage = (lang) => {
-//     i18n.global.locale.value = lang;
-//     localStorage.setItem('language', lang);
-//     document.documentElement.lang = lang;
-
-    
-// }; 
 
 export const setLanguage = (lang) => {
     i18n.global.locale.value = lang;
     localStorage.setItem('language', lang);
-    document.documentElement.lang = lang;
+    applyDocumentLocale(lang);
 
     if (typeof axios !== 'undefined') {
         axios.post('/set-locale', { locale: lang })

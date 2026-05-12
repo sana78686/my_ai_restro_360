@@ -32,8 +32,9 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { setLanguage } from '../i18n';
 
 export default {
   name: 'LanguageSwitcher',
@@ -50,7 +51,7 @@ export default {
 
     const languages = [
       { code: 'en', label: 'English' },
-      { code: 'de', label: 'Deutsch' }
+      { code: 'ar', label: 'العربية' }
     ];
 
     const currentLanguageLabel = computed(() => {
@@ -60,15 +61,12 @@ export default {
 
     const flagEmoji = computed(() => {
       const code = currentLanguage.value;
-      if (code === 'de') return '🇩🇪';
+      if (code === 'ar') return '🇸🇦';
       return '🇬🇧';
     });
 
     const changeLanguage = (langCode) => {
-      locale.value = langCode;
-      localStorage.setItem('language', langCode);
-      localStorage.setItem('language', langCode);
-      document.documentElement.lang = langCode;
+      setLanguage(langCode);
     };
 
     return {

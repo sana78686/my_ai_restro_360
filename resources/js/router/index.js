@@ -169,6 +169,7 @@ router.afterEach(async (to) => {
   const loc = i18n.global.locale?.value || i18n.global.locale
   if (loc) {
     document.documentElement.lang = String(loc)
+    document.documentElement.setAttribute('dir', String(loc) === 'ar' ? 'rtl' : 'ltr')
   }
 
   // Collect titles from all matched routes (parents + child)

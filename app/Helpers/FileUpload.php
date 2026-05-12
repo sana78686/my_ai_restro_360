@@ -105,6 +105,41 @@ class FileUpload
     }
 
     /**
+     * Remove every object under this tenant's upload prefix on the S3 disk (tenant_{id}/...).
+     * Uploads use {@see upload()} → folder tenant_{tenantId}/...
+     */
+    public static function deleteTenantS3Prefix(string $tenantId): void
+    {
+        $tenantId = trim($tenantId);
+        if ($tenantId === '') {
+            return;
+        }
+
+        // Prevent path traversal; S3 keys use tenant id from FileUpload::upload().
+        $safeId = str_replace(['/', '\\'], '', $tenantId);
+        if ($safeId === '') {
+            return;
+        }
+
+        $directory = 'tenant_'.$safeId;
+
+        try {
+            if (! config('filesystems.disks.s3.bucket')) {
+                return;
+            }
+
+            $disk = Storage::disk('s3');
+            $disk->deleteDirectory($directory);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to delete tenant prefix from S3', [
+                'tenant_id' => $tenantId,
+                'directory' => $directory,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
      * Write to S3 using PutObject without an ACL.
      *
      * Laravel's Flysystem S3 adapter always sends an ACL. Buckets with "Bucket owner enforced"

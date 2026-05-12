@@ -292,14 +292,33 @@ class TenantController extends Controller
 
     public function destroy(Tenant $tenant)
     {
-        FileUpload::deleteStored($tenant->logo);
+        $tenantKey = (string) $tenant->getTenantKey();
 
-        $tenant->delete();
+        try {
+            foreach ($tenant->media()->get() as $media) {
+                $media->delete();
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Tenant deleted successfully'
-        ]);
+            FileUpload::deleteStored($tenant->logo);
+            FileUpload::deleteTenantS3Prefix($tenantKey);
+
+            $tenant->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Restaurant and all associated data were removed.',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Tenant delete failed', [
+                'tenant_id' => $tenantKey,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete restaurant. '.$e->getMessage(),
+            ], 500);
+        }
     }
 
     public function updateStatus(Request $request, $id)

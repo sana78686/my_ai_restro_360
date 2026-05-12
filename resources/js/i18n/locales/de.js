@@ -1132,6 +1132,13 @@ export default {
         },
         approveOwnerSuccess:
             'Inhaber verifiziert. Eine Bestätigungs-E-Mail wurde an den Restaurantinhaber gesendet.',
+        deleteConfirmTitle: 'Dieses Restaurant löschen?',
+        deleteConfirmText:
+            'Restaurant „{name}“ wird endgültig entfernt: Mandanten-Datenbank, Domains, Abonnements und alle in der Cloud gespeicherten Dateien dieses Restaurants werden gelöscht. Dies kann nicht rückgängig gemacht werden.',
+        deleteConfirmButton: 'Ja, endgültig löschen',
+        deleteSuccess:
+            'Restaurant gelöscht. Mandanten-Datenbank und Cloud-Dateien wurden entfernt.',
+        deleteFailed: 'Restaurant konnte nicht gelöscht werden.',
         list: {
             title: 'Restaurants',
             name: 'Name',
@@ -1144,7 +1151,8 @@ export default {
             verification: 'Verifizierung',
             needVerification: 'Verifizierung erforderlich',
             ownerVerified: 'Verifiziert',
-            actions: 'Aktionen'
+            actions: 'Aktionen',
+            noImage: 'Kein Bild'
         },
         status: {
             active: 'Aktiv',

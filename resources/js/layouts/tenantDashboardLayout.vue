@@ -863,7 +863,7 @@ export default {
       setting: {},
       languages: [
         { code: 'en', name: 'English' },
-        { code: 'de', name: 'Deutsch' }
+        { code: 'ar', name: 'العربية' }
       ],
       selectedLang: { code: 'en', name: 'English' },
       notifications: [],

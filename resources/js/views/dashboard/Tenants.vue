@@ -85,14 +85,20 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <img
-                                            :src="
-                                                tenant.logo_url ||
-                                                tenant.logo ||
-                                                '/images/default-restaurant.png'
-                                            "
+                                            v-if="tenantLogoSrc(tenant)"
+                                            :src="tenantLogoSrc(tenant)"
                                             :alt="tenant.name"
                                             class="tenant-logo me-2"
+                                            @error="onTenantLogoError(tenant.id)"
                                         />
+                                        <div
+                                            v-else
+                                            class="tenant-logo tenant-logo--placeholder me-2"
+                                            role="img"
+                                            :aria-label="$t('tenants.list.noImage')"
+                                        >
+                                            <i class="fas fa-image" aria-hidden="true"></i>
+                                        </div>
                                         <div class="min-w-0">
                                             <div class="fw-semibold text-truncate">
                                                 {{ tenant.name }}
@@ -161,41 +167,68 @@
                                         }}
                                     </button>
                                 </td>
-                                <td class="text-end text-md-end">
-                                    <select
-                                        class="form-select form-select-sm tenants-action-select ms-md-auto"
-                                        :disabled="loading"
-                                        :value="tenant.status"
-                                        @change="
-                                            changeTenantStatus(
-                                                tenant,
-                                                $event.target.value
-                                            )
-                                        "
+                                <td class="text-end text-md-end tenants-actions-cell">
+                                    <div
+                                        class="d-flex flex-column flex-md-row gap-2 align-items-stretch align-items-md-center justify-content-md-end"
                                     >
-                                        <option value="pending">
-                                            {{
-                                                $t("tenants.status.pending")
-                                            }}
-                                        </option>
-                                        <option value="trial">
-                                            {{ $t("tenants.status.trial") }}
-                                        </option>
-                                        <option value="active">
-                                            {{ $t("tenants.status.active") }}
-                                        </option>
-                                        <option value="inactive">
-                                            {{
-                                                $t("tenants.status.inactive") ||
-                                                "Inactive"
-                                            }}
-                                        </option>
-                                        <option value="suspended">
-                                            {{
-                                                $t("tenants.status.suspended")
-                                            }}
-                                        </option>
-                                    </select>
+                                        <select
+                                            class="form-select form-select-sm tenants-action-select ms-md-auto"
+                                            :disabled="loading || deletingTenantId === tenant.id"
+                                            :value="tenant.status"
+                                            @change="
+                                                changeTenantStatus(
+                                                    tenant,
+                                                    $event.target.value
+                                                )
+                                            "
+                                        >
+                                            <option value="pending">
+                                                {{
+                                                    $t("tenants.status.pending")
+                                                }}
+                                            </option>
+                                            <option value="trial">
+                                                {{ $t("tenants.status.trial") }}
+                                            </option>
+                                            <option value="active">
+                                                {{
+                                                    $t("tenants.status.active")
+                                                }}
+                                            </option>
+                                            <option value="inactive">
+                                                {{
+                                                    $t(
+                                                        "tenants.status.inactive"
+                                                    ) || "Inactive"
+                                                }}
+                                            </option>
+                                            <option value="suspended">
+                                                {{
+                                                    $t(
+                                                        "tenants.status.suspended"
+                                                    )
+                                                }}
+                                            </option>
+                                        </select>
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-outline-danger tenants-delete-btn"
+                                            :disabled="
+                                                loading ||
+                                                deletingTenantId === tenant.id
+                                            "
+                                            :title="$t('tenants.actions.delete')"
+                                            @click="confirmDeleteTenant(tenant)"
+                                        >
+                                            <i
+                                                class="fas fa-trash-alt me-md-1"
+                                                aria-hidden="true"
+                                            ></i>
+                                            <span class="d-md-none">{{
+                                                $t("tenants.actions.delete")
+                                            }}</span>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             <tr
@@ -247,6 +280,26 @@ export default {
         const loading = ref(false);
         const initialLoad = ref(true);
         const verifyingTenantId = ref(null);
+        const deletingTenantId = ref(null);
+        const tenantLogoFailedIds = ref({});
+
+        const tenantLogoSrc = (tenant) => {
+            if (tenantLogoFailedIds.value[tenant.id]) {
+                return null;
+            }
+            const u = tenant.logo_url || tenant.logo;
+            if (!u || !String(u).trim()) {
+                return null;
+            }
+            return String(u).trim();
+        };
+
+        const onTenantLogoError = (tenantId) => {
+            tenantLogoFailedIds.value = {
+                ...tenantLogoFailedIds.value,
+                [tenantId]: true,
+            };
+        };
 
         const tenantHost = (tenant) => {
             const sub = tenant.subdomain || "";
@@ -359,6 +412,45 @@ export default {
             }
         };
 
+        const confirmDeleteTenant = async (tenant) => {
+            const result = await Swal.fire({
+                title: t("tenants.deleteConfirmTitle"),
+                text: t("tenants.deleteConfirmText", {
+                    name: tenant.name || tenant.id,
+                }),
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#dc3545",
+                confirmButtonText: t("tenants.deleteConfirmButton"),
+                cancelButtonText: t("tenants.approveOwnerDialog.cancel"),
+            });
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            deletingTenantId.value = tenant.id;
+            try {
+                await axios.delete(`/dashboard/tenants/${tenant.id}`);
+                await fetchTenants();
+                Swal.fire({
+                    icon: "success",
+                    title: t("common.success"),
+                    text: t("tenants.deleteSuccess"),
+                });
+            } catch (error) {
+                console.error("Error deleting tenant:", error);
+                Swal.fire({
+                    icon: "error",
+                    title: t("common.error"),
+                    text:
+                        error.response?.data?.message ||
+                        t("tenants.deleteFailed"),
+                });
+            } finally {
+                deletingTenantId.value = null;
+            }
+        };
+
         const changeTenantStatus = async (tenant, status) => {
             try {
                 loading.value = true;
@@ -417,8 +509,12 @@ export default {
             loading,
             initialLoad,
             verifyingTenantId,
+            deletingTenantId,
             filteredTenants,
             approveOwnerAccount,
+            confirmDeleteTenant,
+            tenantLogoSrc,
+            onTenantLogoError,
             changeTenantStatus,
             getStatusBadgeClass,
             formatDate,
@@ -449,6 +545,23 @@ export default {
     flex-shrink: 0;
 }
 
+.tenant-logo--placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    color: #9ca3af;
+    border: 1px dashed #d1d5db;
+}
+
+.tenant-logo--placeholder i {
+    font-size: 1rem;
+}
+
+.tenants-delete-btn {
+    white-space: nowrap;
+}
+
 .tenants-table-responsive {
     width: 100%;
     overflow-x: auto;
@@ -458,7 +571,7 @@ export default {
 }
 
 .tenants-table {
-    min-width: 920px;
+    min-width: 980px;
     font-size: 0.9375rem;
 }
 

@@ -1201,6 +1201,13 @@ export default {
         },
         approveOwnerSuccess:
             'Owner verified. A confirmation email has been sent to the restaurant owner.',
+        deleteConfirmTitle: 'Delete this restaurant?',
+        deleteConfirmText:
+            'Restaurant "{name}" will be permanently removed: its tenant database, domains, subscriptions, and all files stored for this tenant in the cloud will be deleted. This cannot be undone.',
+        deleteConfirmButton: 'Yes, delete permanently',
+        deleteSuccess:
+            'Restaurant deleted successfully. Tenant database and cloud files were removed.',
+        deleteFailed: 'Failed to delete restaurant.',
         list: {
             title: 'Restaurants',
             name: 'Name',
@@ -1213,7 +1220,8 @@ export default {
             verification: 'Verification',
             needVerification: 'Need verification',
             ownerVerified: 'Verified',
-            actions: 'Actions'
+            actions: 'Actions',
+            noImage: 'No image'
         },
         status: {
             active: 'Active',

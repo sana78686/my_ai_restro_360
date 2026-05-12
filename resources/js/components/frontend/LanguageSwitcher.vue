@@ -38,7 +38,7 @@ const { locale } = useI18n()
 
 const languages = [
   { code: 'en', name: 'English' },
-  { code: 'de', name: 'Deutsch' }
+  { code: 'ar', name: 'العربية' }
 ]
 
 const currentLanguage = computed(() => locale.value)
