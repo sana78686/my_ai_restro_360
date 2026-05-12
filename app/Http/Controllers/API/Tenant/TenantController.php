@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use App\Mail\NewTenantNotification;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\ValidatesTurnstile;
 use App\Helpers\TenantHost;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -25,6 +26,8 @@ use Stripe\Subscription as StripeSubscription;
 
 class TenantController extends Controller
 {
+    use ValidatesTurnstile;
+
     public function register(Request $request)
     {
         // dd($request->all());
@@ -66,6 +69,8 @@ class TenantController extends Controller
                     'errors' => $validator->errors()
                 ], 422);
             }
+
+            $this->validateTurnstile($request);
 
             // Check if domain exists
             $domainName = TenantHost::fqdn($subdomain);

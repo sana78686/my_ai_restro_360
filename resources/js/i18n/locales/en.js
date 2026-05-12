@@ -907,6 +907,9 @@ export default {
     },
     // Auth
     auth: {
+        turnstile: {
+            required: 'Please complete the security verification.',
+        },
         login: {
             title: 'Login to your account',
             email: 'Email Address',

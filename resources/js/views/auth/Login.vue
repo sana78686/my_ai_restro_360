@@ -41,6 +41,14 @@
             />
             <p v-if="fieldErrors.lookup" class="restro-form__field-error">{{ fieldErrors.lookup }}</p>
           </div>
+          <TurnstileChallenge
+            v-if="turnstileEnabled"
+            ref="turnstileEmailRef"
+            action-key="super-login-email"
+            @token="onTsEmailToken"
+            @expire="onTsEmailExpire"
+            @fail="onTsEmailExpire"
+          />
           <button class="restro-form__submit" type="submit" :disabled="loading">
             {{ loading ? '…' : $t('auth.superAdmin.continue') }}
           </button>
@@ -94,6 +102,14 @@
             </div>
             <p v-if="fieldErrors.password" class="restro-form__field-error">{{ fieldErrors.password }}</p>
           </div>
+          <TurnstileChallenge
+            v-if="turnstileEnabled"
+            ref="turnstilePwRef"
+            action-key="super-login-password"
+            @token="onTsPwToken"
+            @expire="onTsPwExpire"
+            @fail="onTsPwExpire"
+          />
           <button class="restro-form__submit" type="submit" :disabled="loading">
             {{ loading ? '…' : $t('auth.login.submit') }}
           </button>
@@ -118,6 +134,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
 import RestroInfoTip from '../../components/frontend/RestroInfoTip.vue'
+import TurnstileChallenge from '../../components/TurnstileChallenge.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -127,6 +144,28 @@ const loading = ref(false)
 const showPassword = ref(false)
 const formError = ref('')
 const lookupEmail = ref('')
+
+const turnstileEmailRef = ref(null)
+const turnstilePwRef = ref(null)
+const tsEmailToken = ref('')
+const tsPwToken = ref('')
+
+const turnstileEnabled = computed(
+  () => typeof window !== 'undefined' && !!window.TURNSTILE_SITE_KEY
+)
+
+function onTsEmailToken (token) {
+  tsEmailToken.value = token || ''
+}
+function onTsEmailExpire () {
+  tsEmailToken.value = ''
+}
+function onTsPwToken (token) {
+  tsPwToken.value = token || ''
+}
+function onTsPwExpire () {
+  tsPwToken.value = ''
+}
 
 const fieldErrors = reactive({
   lookup: '',
@@ -225,10 +264,19 @@ async function runEmailLookup () {
     return
   }
 
+  if (turnstileEnabled.value && !tsEmailToken.value) {
+    formError.value = t('auth.turnstile.required')
+    scrollIntoFormAndFocus(emailEl)
+    return
+  }
+
   loading.value = true
   formError.value = ''
   try {
-    const { data } = await window.axios.post('/login/lookup', { email: raw })
+    const { data } = await window.axios.post('/login/lookup', {
+      email: raw,
+      ...(tsEmailToken.value ? { turnstile_token: tsEmailToken.value } : {})
+    })
     if (data.account_type === 'super_admin') {
       await router.push({ name: 'login-password', query: { email: data.email } })
       return
@@ -245,6 +293,8 @@ async function runEmailLookup () {
     const msg = err.response?.data?.message || t('auth.superAdmin.lookupNotFound')
     formError.value = msg
     scrollIntoFormAndFocus(emailEl)
+    tsEmailToken.value = ''
+    turnstileEmailRef.value?.reset()
   } finally {
     loading.value = false
   }
@@ -263,12 +313,19 @@ async function handlePasswordLogin () {
     return
   }
 
+  if (turnstileEnabled.value && !tsPwToken.value) {
+    formError.value = t('auth.turnstile.required')
+    focusById('super-login-pw')
+    return
+  }
+
   loading.value = true
   try {
     const http = window.axios
     const response = await http.post('/login', {
       email: form.email,
-      password: form.password
+      password: form.password,
+      ...(tsPwToken.value ? { turnstile_token: tsPwToken.value } : {})
     })
 
     if (response.data.success) {
@@ -308,6 +365,8 @@ async function handlePasswordLogin () {
       text: msg,
       confirmButtonColor: '#dc3545'
     })
+    tsPwToken.value = ''
+    turnstilePwRef.value?.reset()
   } finally {
     loading.value = false
   }

@@ -261,6 +261,16 @@
                   </div>
 
                   <!-- Submit -->
+                  <div class="col-12 d-flex justify-content-center">
+                    <TurnstileChallenge
+                      v-if="turnstileOn"
+                      ref="turnstileRegisterRef"
+                      action-key="tenant-register"
+                      @token="onRegisterTsToken"
+                      @expire="onRegisterTsExpire"
+                      @fail="onRegisterTsExpire"
+                    />
+                  </div>
                   <div class="col-12 text-center mt-3">
                     <button
                       type="submit"
@@ -311,17 +321,32 @@ import {
 } from '../../utils/googlePlacesProgrammatic.js'
 import { Tooltip } from 'bootstrap'
 import { VueTelInput } from 'vue-tel-input'
+import TurnstileChallenge from '../../components/TurnstileChallenge.vue'
 
 export default {
   name: 'TenantRegister',
   components: {
-    VueTelInput
+    VueTelInput,
+    TurnstileChallenge
   },
 
   setup() {
     const contactPhone = import.meta.env.VITE_CONTACT_PHONE;
     const router = useRouter()
     const loading = ref(false)
+    const turnstileRegisterRef = ref(null)
+    const tsRegisterToken = ref('')
+    const turnstileOn = computed(
+      () => typeof window !== 'undefined' && !!window.TURNSTILE_SITE_KEY
+    )
+
+    function onRegisterTsToken (token) {
+      tsRegisterToken.value = token || ''
+    }
+    function onRegisterTsExpire () {
+      tsRegisterToken.value = ''
+    }
+
     const predictions = ref([])
     const showAutocomplete = ref(false)
     const businessNameInput = ref(null)
@@ -734,6 +759,15 @@ export default {
         return;
       }
 
+      if (turnstileOn.value && !tsRegisterToken.value) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Security check',
+          text: 'Please complete the security verification before submitting.'
+        });
+        return;
+      }
+
       loading.value = true;
 
       try {
@@ -753,6 +787,10 @@ export default {
         const selectedPlanId = sessionStorage.getItem('selectedPlanId')
         if (selectedPlanId) {
           submitData.plan_id = parseInt(selectedPlanId)
+        }
+
+        if (tsRegisterToken.value) {
+          submitData.turnstile_token = tsRegisterToken.value
         }
 
         // Only include location data if it's from Google Places
@@ -804,6 +842,8 @@ export default {
         }
       } catch (error) {
         console.error('Registration error:', error);
+        tsRegisterToken.value = ''
+        turnstileRegisterRef.value?.reset()
         const message = error.response?.data?.message || 'An error occurred during registration';
         Swal.fire({
           icon: 'error',
@@ -819,6 +859,10 @@ export default {
       form,
       selectedPlanInfo,
       loading,
+      turnstileRegisterRef,
+      turnstileOn,
+      onRegisterTsToken,
+      onRegisterTsExpire,
       handleSubmit,
       predictions,
       showAutocomplete,

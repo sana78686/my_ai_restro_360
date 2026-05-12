@@ -17,6 +17,7 @@
     <script>
         window.MAIN_DOMAIN = "{{ config('app.main_domain') }}";
         window.GOOGLE_SIGNIN_ENABLED = @json((bool) config('services.google.client_id'));
+        window.TURNSTILE_SITE_KEY = @json(config('turnstile.site_key'));
     </script>
 
     <!-- Scripts and Styles -->

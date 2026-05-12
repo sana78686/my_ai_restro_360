@@ -82,6 +82,14 @@
               />
               <label for="tenant-login-remember">{{ $t('auth.login.remember') }}</label>
             </div>
+            <TurnstileChallenge
+              v-if="turnstileEnabled"
+              ref="turnstileLoginRef"
+              action-key="tenant-login"
+              @token="onTsLoginToken"
+              @expire="onTsLoginExpire"
+              @fail="onTsLoginExpire"
+            />
             <button class="restro-form__submit" type="submit" :disabled="loading">
               {{ loading && !showVerifyPanel ? '…' : $t('auth.login.submit') }}
             </button>
@@ -118,6 +126,14 @@
               <p v-if="verifyError" class="restro-form__msg restro-form__msg--error" role="alert">
                 {{ verifyError }}
               </p>
+              <TurnstileChallenge
+                v-if="turnstileEnabled"
+                ref="turnstileOtpRef"
+                action-key="tenant-verify-otp"
+                @token="onTsOtpToken"
+                @expire="onTsOtpExpire"
+                @fail="onTsOtpExpire"
+              />
               <div class="restro-form__row--2 restro-form__row--verify-actions">
                 <button
                   type="submit"
@@ -153,6 +169,7 @@ import { useRoute, useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
 import { logTenantOtpFromTableIfPending } from '../../utils/tenantOtpFromTable'
 import RestroInfoTip from '../../components/frontend/RestroInfoTip.vue'
+import TurnstileChallenge from '../../components/TurnstileChallenge.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -171,6 +188,28 @@ const verifyLoading = ref(false)
 const verifyError = ref('')
 const resendCooldown = ref(0)
 let resendTimer = null
+
+const turnstileLoginRef = ref(null)
+const turnstileOtpRef = ref(null)
+const tsLoginToken = ref('')
+const tsOtpToken = ref('')
+
+const turnstileEnabled = computed(
+  () => typeof window !== 'undefined' && !!window.TURNSTILE_SITE_KEY
+)
+
+function onTsLoginToken (token) {
+  tsLoginToken.value = token || ''
+}
+function onTsLoginExpire () {
+  tsLoginToken.value = ''
+}
+function onTsOtpToken (token) {
+  tsOtpToken.value = token || ''
+}
+function onTsOtpExpire () {
+  tsOtpToken.value = ''
+}
 
 const canVerifyOtp = computed(
   () => verifyOtp.value && verifyOtp.value.length === 6 && /^\d{6}$/.test(verifyOtp.value)
@@ -234,11 +273,16 @@ async function onSubmit() {
     await handleVerifyOtp()
     return
   }
+  if (turnstileEnabled.value && !tsLoginToken.value) {
+    formError.value = t('auth.turnstile.required')
+    return
+  }
   loading.value = true
   try {
     const response = await window.axios.post('/tenant/login', {
       email: username.value,
-      password: password.value
+      password: password.value,
+      ...(tsLoginToken.value ? { turnstile_token: tsLoginToken.value } : {})
     })
 
     const token = response.data.token
@@ -289,6 +333,8 @@ async function onSubmit() {
         text: formError.value,
         confirmButtonColor: '#dc3545'
       })
+      tsLoginToken.value = ''
+      turnstileLoginRef.value?.reset()
     }
   } finally {
     loading.value = false
@@ -301,6 +347,10 @@ async function handleVerifyOtp() {
     verifyError.value = t('auth.otp.invalidOtp')
     return
   }
+  if (turnstileEnabled.value && !tsOtpToken.value) {
+    verifyError.value = t('auth.turnstile.required')
+    return
+  }
   verifyLoading.value = true
   try {
     const email = localStorage.getItem('pending_verification_email') || username.value
@@ -309,7 +359,8 @@ async function handleVerifyOtp() {
     }
     const response = await window.axios.post('/tenant/verify-otp', {
       email,
-      otp: verifyOtp.value
+      otp: verifyOtp.value,
+      ...(tsOtpToken.value ? { turnstile_token: tsOtpToken.value } : {})
     })
     if (response.data.success) {
       const token = response.data.token
@@ -337,6 +388,8 @@ async function handleVerifyOtp() {
     else if (err.response?.status === 422) msg = t('auth.otp.invalidOtp')
     else if (err.response?.status === 410) msg = t('auth.otp.otpExpired')
     verifyError.value = msg
+    tsOtpToken.value = ''
+    turnstileOtpRef.value?.reset()
   } finally {
     verifyLoading.value = false
   }

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Mail\PasswordResetOtp;
 use App\Mail\TenantWelcomeEmail;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\ValidatesTurnstile;
 use App\Support\MailDebug;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -20,6 +21,8 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    use ValidatesTurnstile;
+
     /**
      * Unified entry: detect super admin (central users) vs tenant owner by email.
      */
@@ -28,6 +31,8 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email',
         ]);
+
+        $this->validateTurnstile($request);
 
         $email = strtolower(trim($request->string('email')->toString()));
 
@@ -159,6 +164,8 @@ class AuthController extends Controller
             'password' => 'required|string',
             'subdomain' => 'nullable|string'
         ]);
+
+        $this->validateTurnstile($request);
 
         // 🔹 Find user
         $user = User::where('email', $request->email)->first();

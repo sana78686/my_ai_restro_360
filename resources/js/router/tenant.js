@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import TenantFrontendLayout from '../layouts/TenantFrontendLayout.vue';
 import TenantDashboardLayout from '../layouts/TenantDashboardLayout.vue';
-import TenantLanding from '../views/tenant/landing.vue';
+import TenantLanding from '../views/tenant/Landing.vue';
 import axios from 'axios';
 import { getAppName, getAppNameSync } from '../utils/appName';
 

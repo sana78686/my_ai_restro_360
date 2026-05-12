@@ -14,6 +14,7 @@ use App\Mail\PasswordResetOtp;
 use App\Helpers\LocationHelper;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\ValidatesTurnstile;
 use App\Support\MailDebug;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -21,6 +22,8 @@ use Illuminate\Support\Facades\Mail;
 
 class AuthController extends Controller
 {
+    use ValidatesTurnstile;
+
     private function syncAccountVerificationTokenToCentralTenant(string $otp, Carbon $expires): void
     {
         $current = tenant();
@@ -59,6 +62,8 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+        $this->validateTurnstile($request);
+
         $credentials = $request->only('email', 'password');
         Log::info("Login credentials:", $credentials);
 
@@ -126,6 +131,8 @@ class AuthController extends Controller
             'email' => 'required|email',
             'otp' => 'required|string|size:6',
         ]);
+
+        $this->validateTurnstile($request);
 
         /** @var User|null $user */
         $user = User::where('email', $request->email)->first();

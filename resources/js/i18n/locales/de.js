@@ -905,6 +905,9 @@ export default {
 
     // Auth
     auth: {
+        turnstile: {
+            required: 'Bitte schließen Sie die Sicherheitsüberprüfung ab.',
+        },
         login: {
             title: 'Bei Ihrem Konto anmelden',
             email: 'E-Mail-Adresse',

@@ -7,6 +7,10 @@
 
     <title>{{ config('app.name', 'Laravel') }} - Tenant Dashboard</title>
 
+    <script>
+        window.TURNSTILE_SITE_KEY = @json(config('turnstile.site_key'));
+    </script>
+
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/tenant.js'])
 </head>
