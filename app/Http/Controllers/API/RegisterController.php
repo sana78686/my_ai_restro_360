@@ -32,7 +32,7 @@ class RegisterController extends Controller
         ]);
 
         try {
-            // Create tenant
+            // Create tenant with default theme
             $tenant = Tenant::create([
                 'name' => $request->restaurant_name,
                 'domain' => Str::slug($request->restaurant_name),
@@ -41,7 +41,8 @@ class RegisterController extends Controller
                 'state' => $request->state,
                 'country' => $request->country,
                 'postal_code' => $request->postal_code,
-                'place_id' => $request->place_id
+                'place_id' => $request->place_id,
+                'theme' => 'classic', // Default theme for new tenants
             ]);
 
             // Handle logo upload (S3)

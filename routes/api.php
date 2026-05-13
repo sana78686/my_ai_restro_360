@@ -46,6 +46,8 @@ use App\Http\Controllers\API\Tenant\TenantController as RestaurantTenantControll
 use App\Http\Controllers\API\Dashboard\TenantController as DashboardTenantController;
 use App\Http\Controllers\API\Tenant\StockCheckController as TenantStockCheckController;
 use App\Http\Controllers\API\Tenant\BranchController;
+use App\Http\Controllers\API\Tenant\WebsiteSettingsController;
+use App\Http\Controllers\API\Tenant\BannerController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -153,6 +155,10 @@ Route::middleware([
     Route::get('/settings', [App\Http\Controllers\API\Tenant\SettingController::class, 'index']);
     Route::get('/email-setting', [App\Http\Controllers\API\Tenant\SettingController::class, 'email_index']);
     Route::get('/app-name', [AppController::class, 'getAppName']);
+    
+    // Public Website Settings & Banners for frontend themes
+    Route::get('/website-settings', [WebsiteSettingsController::class, 'getWebsiteSettings']);
+    Route::get('/banners', [BannerController::class, 'index']);
     // Public CMS list for storefront header/footer (dashboard uses auth cms_menu resource)
     Route::get('/public/cms_menu', [CmsMenuController::class, 'index']);
     Route::post('/verify-otp', [TenantAuthController::class, 'verifyOtp']);
@@ -258,6 +264,26 @@ Route::prefix('stripe')->group(function () {
         Route::put('/settings/discount', [App\Http\Controllers\API\Tenant\SettingController::class, 'updateDiscount']);
         Route::put('/email-setting', [App\Http\Controllers\API\Tenant\SettingController::class, 'save_email_setting']);
         Route::post('/upload-logo', [App\Http\Controllers\API\Tenant\SettingController::class, 'uploadLogo']);
+
+        // Website Settings Routes
+        Route::prefix('website-settings')->group(function () {
+            Route::get('/themes', [WebsiteSettingsController::class, 'getThemes']);
+            Route::get('/', [WebsiteSettingsController::class, 'getWebsiteSettings']);
+            Route::put('/', [WebsiteSettingsController::class, 'updateWebsiteSettings']);
+            Route::post('/hero-image', [WebsiteSettingsController::class, 'uploadHeroImage']);
+            Route::post('/favicon', [WebsiteSettingsController::class, 'uploadFavicon']);
+        });
+
+        // Banner Routes
+        Route::prefix('banners')->group(function () {
+            Route::get('/', [BannerController::class, 'index']);
+            Route::post('/', [BannerController::class, 'store']);
+            Route::get('/{banner}', [BannerController::class, 'show']);
+            Route::post('/{banner}', [BannerController::class, 'update']);
+            Route::delete('/{banner}', [BannerController::class, 'destroy']);
+            Route::post('/reorder', [BannerController::class, 'reorder']);
+            Route::post('/{banner}/toggle', [BannerController::class, 'toggle']);
+        });
 
         // Roles
         Route::get('permissions', [TenantRoleController::class, 'permissions']);

@@ -1,36 +1,89 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import TenantFrontendLayout from '../layouts/TenantFrontendLayout.vue';
 import TenantDashboardLayout from '../layouts/TenantDashboardLayout.vue';
-import TenantLanding from '../views/tenant/Landing.vue';
 import axios from 'axios';
 import { getAppName, getAppNameSync } from '../utils/appName';
+
+// Get active theme from window or default to classic
+const getActiveTheme = () => {
+  if (typeof window !== 'undefined' && window.TENANT_THEME) {
+    const theme = String(window.TENANT_THEME).toLowerCase().trim();
+    if (['classic', 'modern', 'minimal', 'blaze'].includes(theme)) {
+      return theme;
+    }
+  }
+  return 'classic';
+};
+
+// Dynamic layout loader based on theme
+const loadThemeLayout = () => {
+  const theme = getActiveTheme();
+  switch (theme) {
+    case 'blaze':
+      return () => import('../../themes/blaze/layouts/TenantFrontendLayout.vue');
+    case 'modern':
+      return () => import('../../themes/modern/layouts/TenantFrontendLayout.vue');
+    case 'minimal':
+      return () => import('../../themes/minimal/layouts/TenantFrontendLayout.vue');
+    case 'classic':
+    default:
+      return () => import('../layouts/TenantFrontendLayout.vue');
+  }
+};
+
+// Dynamic landing page loader based on theme
+const loadThemeLanding = () => {
+  const theme = getActiveTheme();
+  switch (theme) {
+    case 'blaze':
+      return () => import('../../themes/blaze/pages/Landing.vue');
+    case 'modern':
+      return () => import('../../themes/modern/pages/Landing.vue');
+    case 'minimal':
+      return () => import('../../themes/minimal/pages/Landing.vue');
+    case 'classic':
+    default:
+      return () => import('../views/tenant/Landing.vue');
+  }
+};
+
+// Dynamic menu page loader based on theme
+const loadThemeMenu = () => {
+  const theme = getActiveTheme();
+  switch (theme) {
+    case 'blaze':
+      return () => import('../../themes/blaze/pages/Menu.vue');
+    default:
+      return () => import('../views/tenant/Landing.vue'); // Classic doesn't have separate menu
+  }
+};
 
 const routes = [
 
   // Tenant Frontend routes
   {
     path: '/',
-
-    component: TenantFrontendLayout,
+    component: loadThemeLayout(),
     children: [
       {
         path: '',
         name: 'tenant-landing',
         meta: { title: 'Home' },
-        component: TenantLanding,
+        component: loadThemeLanding(),
         beforeEnter: (to, from, next) => {
           const host = window.location.host;
           const mainDomain = window.MAIN_DOMAIN;
-          // Example: 4v57qif4mzpa3wap.localhost:8000
           if (host && host !== mainDomain) {
-            // if (host && host !== 'localhost:8000' && host !== '127.0.0.1:8000') {
-            // It's a tenant subdomain, show tenant landing
             next();
           } else {
-            // It's the main domain, redirect to main home page
             next({ name: 'home' });
           }
         }
+      },
+      {
+        path: 'menu',
+        name: 'tenant-menu',
+        meta: { title: 'Menu' },
+        component: loadThemeMenu()
       },
       {
         path: 'checkout',

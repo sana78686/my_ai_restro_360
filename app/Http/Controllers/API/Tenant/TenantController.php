@@ -84,7 +84,7 @@ class TenantController extends Controller
             $tenantId = Str::random(8);
             $tenantDatabase = 'airestro360_tenant_' . $tenantId;
 
-            // Create tenant
+            // Create tenant with default theme
             $tenant = Tenant::create([
                 'id' => $tenantId,
                 'name' => $request->business_name,
@@ -105,6 +105,7 @@ class TenantController extends Controller
                 'trial_ends_at' => now()->addDays(14),
                 'database_name' => $tenantDatabase,
                 'status' => 'pending',
+                'theme' => 'classic', // Default theme for new tenants
                 'data' => ['business_name' => $request->business_name],
             ]);
 

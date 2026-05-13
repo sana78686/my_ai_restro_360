@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Log;
 use App\Services\DynamicGatewayFactory;
 use Illuminate\Support\ServiceProvider;
 use App\Services\TenantPaymentGatewayManager;
@@ -61,9 +62,40 @@ class AppServiceProvider extends ServiceProvider
             putenv('AWS_CA_BUNDLE='.$caBundlePath);
         }
 
-        // Share app name with app.blade.php view
+        // Share app name with app.blade.php view + optional tenant theme logging for debugging
         View::composer('app', function ($view) {
             $view->with('appName', AppNameHelper::getAppName());
+
+            $shouldLog = config('app.debug')
+                || filter_var(env('LOG_TENANT_THEME', false), FILTER_VALIDATE_BOOLEAN);
+
+            if (! $shouldLog || ! function_exists('tenancy')) {
+                return;
+            }
+
+            if (tenancy()->initialized && tenant()) {
+                /** @var \App\Models\Tenant $t */
+                $t = tenant();
+                $resolved = strtolower(trim((string) ($t->theme ?? 'classic'))) ?: 'classic';
+
+                Log::info('[Tenant SPA] Resolved storefront theme', [
+                    'host' => request()->getHost(),
+                    'tenant_id' => $t->getTenantKey(),
+                    'central_theme_column' => $t->theme,
+                    'injected_WINDOW_TENANT_THEME' => in_array($resolved, ['classic', 'modern', 'minimal', 'blaze'], true)
+                        ? $resolved
+                        : 'classic (fallback — invalid slug)',
+                    'main_domain_config' => config('app.main_domain'),
+                ]);
+
+                return;
+            }
+
+            if (filter_var(env('LOG_CENTRAL_SPA_THEME', false), FILTER_VALIDATE_BOOLEAN)) {
+                Log::debug('[Central SPA] No tenant context — main-domain router branch', [
+                    'host' => request()->getHost(),
+                ]);
+            }
         });
     }
 }

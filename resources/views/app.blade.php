@@ -19,6 +19,18 @@
         window.TENANT_DOMAIN_BASE = @json(config('tenancy.tenant_domain_base'));
         window.GOOGLE_SIGNIN_ENABLED = @json((bool) config('services.google.client_id'));
         window.TURNSTILE_SITE_KEY = @json(config('turnstile.site_key'));
+
+        {{-- Guest storefront loads this same SPA; inject theme/name so vue-router picks the correct theme chunks --}}
+        @if(function_exists('tenancy') && tenancy()->initialized && tenant())
+            @php
+                $tenantModel = tenant();
+                $tenantLogo = $tenantModel->logo_url ?? null;
+            @endphp
+            window.TENANT_THEME = @json($tenantModel->theme ?? 'classic');
+            window.TENANT_NAME = @json($tenantModel->business_name ?? $tenantModel->name ?? 'Restaurant');
+            window.TENANT_LOGO = @json($tenantLogo);
+            window.TENANT_CURRENCY = @json('$');
+        @endif
     </script>
 
     <!-- Scripts and Styles -->

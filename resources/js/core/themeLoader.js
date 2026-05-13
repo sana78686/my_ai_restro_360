@@ -5,7 +5,7 @@
  * Defaults to 'classic' if no theme is specified.
  */
 
-const AVAILABLE_THEMES = ['classic', 'modern', 'minimal']
+const AVAILABLE_THEMES = ['classic', 'modern', 'minimal', 'blaze']
 const DEFAULT_THEME = 'classic'
 
 /**
