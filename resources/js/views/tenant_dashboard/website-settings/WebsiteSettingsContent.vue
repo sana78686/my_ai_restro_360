@@ -25,7 +25,15 @@
             @click="selectTheme(theme.id)"
             role="button"
           >
-            <div class="tpl__mock" :style="{ background: theme.preview_color }"></div>
+            <div class="tpl__mock" :style="{ background: theme.preview_color }">
+              <button 
+                class="tpl__preview-btn" 
+                @click.stop="previewTheme(theme.id)"
+                :title="'Preview ' + theme.name + ' theme'"
+              >
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
             <div class="fw-bold small mt-2 text-capitalize">{{ theme.name }}</div>
             <p class="small text-muted mb-0">{{ theme.description }}</p>
             <i v-if="form.theme === theme.id" class="fas fa-check-circle tpl__check text-success"></i>
@@ -518,6 +526,14 @@ function selectTheme(themeId) {
   form.value.theme = themeId
 }
 
+function previewTheme(themeId) {
+  // Get the tenant's frontend URL and add preview_theme query param
+  const tenantHost = window.location.hostname
+  const baseUrl = `${window.location.protocol}//${tenantHost}`
+  const previewUrl = `${baseUrl}/?preview_theme=${themeId}`
+  window.open(previewUrl, '_blank')
+}
+
 async function saveSettings() {
   saving.value = true
   try {
@@ -772,6 +788,33 @@ watch(tab, () => {
 .tpl__mock {
   height: 60px;
   border-radius: 8px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tpl__preview-btn {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.2s;
+  background: rgba(255,255,255,0.95);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.tpl__preview-btn:hover {
+  background: #fff;
+  color: var(--a);
+}
+.tpl__mock:hover .tpl__preview-btn {
+  opacity: 1;
 }
 .tpl__check {
   position: absolute;

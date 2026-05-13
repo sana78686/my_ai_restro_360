@@ -18,3 +18,7 @@ use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 |
 */
 
+// Tenant routes are now defined in routes/web.php using the
+// InitializeTenancyByDomain middleware (same pattern as app_ai_storex_360).
+// This file is kept for Stancl Tenancy package compatibility.
+

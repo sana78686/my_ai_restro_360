@@ -25,11 +25,18 @@
             @php
                 $tenantModel = tenant();
                 $tenantLogo = $tenantModel->logo_url ?? null;
+                $allowedThemes = ['classic', 'modern', 'minimal', 'blaze'];
+                // Allow preview_theme query param to override (for dashboard preview)
+                $previewTheme = request()->query('preview_theme');
+                $resolvedTheme = ($previewTheme && in_array($previewTheme, $allowedThemes)) 
+                    ? $previewTheme 
+                    : ($tenantModel->theme ?? 'classic');
             @endphp
-            window.TENANT_THEME = @json($tenantModel->theme ?? 'classic');
+            window.TENANT_THEME = @json($resolvedTheme);
             window.TENANT_NAME = @json($tenantModel->business_name ?? $tenantModel->name ?? 'Restaurant');
             window.TENANT_LOGO = @json($tenantLogo);
             window.TENANT_CURRENCY = @json('$');
+            window.TENANT_PREVIEW_MODE = @json((bool) $previewTheme);
         @endif
     </script>
 
